@@ -1,0 +1,28 @@
+{
+  "policy_name": "vague",
+  "project_name": "AI Receipt Audit System — R&D Project",
+  "description": "An R&D project involving AI and data work.",
+  "phases": [
+    {
+      "name": "Phase 1",
+      "description": "Early stage work.",
+      "allowed": ["work-related expenses", "necessary tools"],
+      "restricted": ["excessive personal spending"],
+      "forbidden": ["clearly non-work items"]
+    },
+    {
+      "name": "Phase 2",
+      "description": "Main development phase.",
+      "allowed": ["things needed for the project", "reasonable expenses"],
+      "restricted": ["borderline cases should be discussed"],
+      "forbidden": ["obvious personal expenses"]
+    },
+    {
+      "name": "Phase 3",
+      "description": "Finishing up.",
+      "allowed": ["wrap-up related expenses"],
+      "restricted": ["new purchases should be minimal"],
+      "forbidden": ["unnecessary spending"]
+    }
+  ]
+}

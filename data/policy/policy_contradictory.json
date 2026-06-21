@@ -1,0 +1,28 @@
+{
+  "policy_name": "contradictory",
+  "project_name": "AI Receipt Audit System — R&D Project",
+  "description": "An R&D project developing AI tools. All necessary expenses are pre-approved. Budget is strictly controlled and all purchases require approval.",
+  "phases": [
+    {
+      "name": "Phase 1: Setup",
+      "description": "Setup phase. No hardware purchases needed as all equipment is provided. Engineers should purchase any equipment they need for development.",
+      "allowed": ["software licenses", "equipment", "all technical expenses"],
+      "restricted": ["equipment over 500 EUR requires approval", "software must be open-source"],
+      "forbidden": ["proprietary software", "hardware"]
+    },
+    {
+      "name": "Phase 2: Development",
+      "description": "Development phase. Remote work is encouraged. Team must be on-site for collaboration.",
+      "allowed": ["travel", "remote work tools", "office expenses", "API credits"],
+      "restricted": ["travel requires pre-approval", "no travel budget available"],
+      "forbidden": ["travel", "remote work subscriptions"]
+    },
+    {
+      "name": "Phase 3: Completion",
+      "description": "Final phase with flexible budget. All spending is frozen pending final budget review.",
+      "allowed": ["any completion-related expense", "celebration"],
+      "restricted": ["all new expenses require written approval"],
+      "forbidden": ["any new expenses without approval"]
+    }
+  ]
+}

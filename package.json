@@ -1,0 +1,16 @@
+{
+  "name": "policy-semantic-audit",
+  "version": "1.0.0",
+  "description": "AI-Driven Policy Semantic Audit — R&D Research Platform",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "multer": "^1.4.5-lts.1",
+    "dotenv": "^16.4.5"
+  }
+}
