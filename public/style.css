@@ -12,3 +12,76 @@
 .verdict-suspicious { background: #fee2e2; border: 1px solid #f87171; color: #b91c1c; }
 .verdict-unclear { background: #fef9c3; border: 1px solid #facc15; color: #92400e; }
 .verdict-error { background: #f3f4f6; border: 1px solid #9ca3af; color: #374151; }
+
+/* ─── Modal overlay ──────────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 0.75rem;
+  max-width: 42rem;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 1.5rem;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  cursor: pointer;
+  color: #9ca3af;
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: color 0.15s;
+}
+
+.modal-close:hover {
+  color: #374151;
+}
+
+.modal-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  padding-right: 2rem;
+}
+
+.modal-section {
+  margin-bottom: 1rem;
+}
+
+.modal-section-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+}
+
+.modal-section-text {
+  font-size: 0.875rem;
+  color: #374151;
+  line-height: 1.5;
+}
+
+body.modal-open {
+  overflow: hidden;
+}

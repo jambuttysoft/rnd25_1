@@ -299,7 +299,7 @@ Critical Path: Task 2 → Task 7 → Task 9 → F1-F4
     Evidence: terminal output
   ```
 
-- [ ] 4. Modal/Overlay System + Experiment Metadata Config
+- [x] 4. Modal/Overlay System + Experiment Metadata Config
 
   **What to do**:
   - Build a reusable modal system in `public/app.js`:

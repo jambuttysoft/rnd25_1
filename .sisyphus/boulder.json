@@ -27,6 +27,15 @@
       "agent": "Sisyphus-Junior",
       "category": "quick",
       "updated_at": "2026-07-14T14:26:23.277Z"
+    },
+    "todo:4": {
+      "task_key": "todo:4",
+      "task_label": "4",
+      "task_title": "Modal/Overlay System + Experiment Metadata Config",
+      "session_id": "ses_09ef9c16cffe2d07KFwsSJZXAj",
+      "agent": "Sisyphus-Junior",
+      "category": "visual-engineering",
+      "updated_at": "2026-07-14T14:28:41.925Z"
     }
   }
 }

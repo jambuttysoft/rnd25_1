@@ -519,6 +519,137 @@ async function saveAnnotation() {
   }
 }
 
+// ─── Modal System ──────────────────────────────────────────────────────────
+
+let _modalActive = false
+
+function showModal(title, bodyHTML) {
+  if (_modalActive) closeModal()
+  _modalActive = true
+
+  const overlay = document.createElement('div')
+  overlay.className = 'modal-overlay'
+  overlay.id = 'psa-modal-overlay'
+
+  const content = document.createElement('div')
+  content.className = 'modal-content'
+
+  content.innerHTML = `
+    <button class="modal-close" id="psa-modal-close" aria-label="Close">&times;</button>
+    <div class="modal-title">${escHtml(title)}</div>
+    <div class="modal-body">${bodyHTML}</div>
+  `
+
+  overlay.appendChild(content)
+  document.body.appendChild(overlay)
+  document.body.classList.add('modal-open')
+
+  // Close handlers
+  const closeBtn = document.getElementById('psa-modal-close')
+  closeBtn.addEventListener('click', closeModal)
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeModal()
+  })
+
+  document.addEventListener('keydown', _modalKeyHandler)
+}
+
+function closeModal() {
+  const overlay = document.getElementById('psa-modal-overlay')
+  if (overlay) overlay.remove()
+  document.body.classList.remove('modal-open')
+  _modalActive = false
+  document.removeEventListener('keydown', _modalKeyHandler)
+}
+
+function _modalKeyHandler(e) {
+  if (e.key === 'Escape') closeModal()
+}
+
+function renderMetaHTML(meta) {
+  if (!meta) return '<p class="text-sm text-gray-500">No description available.</p>'
+  return `
+    ${meta.hypothesis ? `<div class="modal-section"><div class="modal-section-label">Hypothesis</div><div class="modal-section-text">${escHtml(meta.hypothesis)}</div></div>` : ''}
+    ${meta.methodology ? `<div class="modal-section"><div class="modal-section-label">Methodology</div><div class="modal-section-text">${escHtml(meta.methodology)}</div></div>` : ''}
+    ${meta.expectedOutput ? `<div class="modal-section"><div class="modal-section-label">Expected Output</div><div class="modal-section-text"><code class="text-xs bg-gray-100 px-1 rounded">${escHtml(meta.expectedOutput)}</code></div></div>` : ''}
+    ${meta.layer ? `<div class="modal-section"><div class="modal-section-label">Pipeline Layer</div><div class="modal-section-text">${escHtml(meta.layer)}</div></div>` : ''}
+    ${meta.prompt ? `<div class="modal-section"><div class="modal-section-label">Prompt Template</div><div class="modal-section-text"><code class="text-xs bg-gray-100 px-1 rounded">${escHtml(meta.prompt)}</code></div></div>` : ''}
+    ${meta.experimentsUsing ? `<div class="modal-section"><div class="modal-section-label">Dependencies</div><div class="modal-section-text">${escHtml(meta.experimentsUsing)}</div></div>` : ''}
+  `
+}
+
+function showExperimentInfo(tabName) {
+  const meta = EXPERIMENT_META[tabName]
+  if (!meta) return
+  showModal(meta.title, renderMetaHTML(meta))
+}
+
+// ─── Experiment Metadata ───────────────────────────────────────────────────
+
+const EXPERIMENT_META = {
+  e1: {
+    title: 'E1: OCR Extraction Baseline',
+    hypothesis: 'A multimodal LLM can reliably extract structured fields (vendor, date, amount, currency, category, line items) from real-world receipt photos of varying quality, language, and format. High precision is expected on vendor, amount, currency; lower on category (requires inference).',
+    methodology: 'All 26 receipts are processed via /api/extract using google/gemini-2.5-flash. The extraction prompt instructs null-for-unreadable fields. Extracted fields are compared against manual ground-truth annotations. Field-level precision computed for vendor, date, amount, currency, category.',
+    expectedOutput: 'Table of extracted fields: vendor (string), date (YYYY-MM-DD), amount (float), currency (ISO 4217), category (enum), line_items (array). Unreadable fields show as null.',
+    layer: 'Layer 1 — OCR & Extraction',
+    prompt: 'PROMPTS.extraction — instructs model to return null for unreadable fields. Category taxonomy: equipment, software, travel, meals, services, supplies, other.',
+    experimentsUsing: 'All experiments depend on E1\'s extraction quality. E2-E6 consume Layer 1 output as the foundation for policy reasoning.',
+  },
+  e2: {
+    title: 'E2: Zero-shot Verdict (No Chain-of-Thought)',
+    hypothesis: 'Without chain-of-thought instruction, the model produces low-quality, poorly justified verdicts. This establishes the lower-bound baseline for the reasoning experiments.',
+    methodology: 'Single-turn prompt with policy text + extracted fields. Model answers directly: verdict (justified/suspicious/unclear) + one-sentence reason. No step-by-step instruction. Compared against human judges (Cohen\'s kappa).',
+    expectedOutput: 'Verdict badge (justified/suspicious/unclear) + one-sentence reason.',
+    layer: 'Layer 3 — Reasoning & Verdict',
+    prompt: 'PROMPTS.verdictNoCot — minimal prompt: policy text, expense fields, direct classification.',
+    experimentsUsing: 'E3 adds CoT to this same pipeline. E2 results serve as the no-reasoning control.',
+  },
+  e3: {
+    title: 'E3: Chain-of-Thought Reasoning',
+    hypothesis: 'Adding "think step by step" CoT instruction improves verdict quality and produces auditable reasoning chains with explicit policy quotation.',
+    methodology: 'Same data as E2. Prompt extended with 4-step CoT instruction: (1) identify expense type, (2) quote applicable policy clause, (3) assess amount reasonableness, (4) flag ambiguities.',
+    expectedOutput: 'Verdict badge + reason + expandable "Show reasoning" section with step-by-step analysis.',
+    layer: 'Layer 3 — Reasoning & Verdict',
+    prompt: 'PROMPTS.verdictCot — 4-step chain-of-thought requiring explicit policy quotation in step 2.',
+    experimentsUsing: 'E3 is the primary CoT baseline. E4/E5/E6 build on this approach.',
+  },
+  e4: {
+    title: 'E4: Phase-Sensitive Reasoning',
+    hypothesis: 'The same expense receives a DIFFERENT verdict when the stated project phase changes, demonstrating genuine semantic grounding rather than surface matching.',
+    methodology: 'Receipt evaluated across all 3 project phases (Infrastructure Setup, Experimentation, Evaluation & Documentation) in parallel using CoT prompt. Records whether verdict changes appropriately per phase.',
+    expectedOutput: '3-column grid showing verdict per phase side-by-side. Correct behavior: same receipt gets different verdicts in different phases.',
+    layer: 'Layer 2 + 3 — Policy Grounding + Reasoning',
+    prompt: 'PROMPTS.verdictCot injected with each of 3 phase texts. All 3 LLM calls happen in parallel via Promise.all.',
+    experimentsUsing: 'E4 depends on E1 extraction. Uses only Clear policy variant for controlled comparison.',
+  },
+  e5: {
+    title: 'E5: Ambiguity & Uncertainty Handling',
+    hypothesis: 'With a 5-step CoT including an information-sufficiency check, the model will express uncertainty ("unclear") on genuinely ambiguous receipts where context is missing from the receipt alone.',
+    methodology: 'Same pipeline as E3 but with extended 5-step prompt. Step 5 asks: "Does the receipt alone provide enough information to determine justification?" If not → return "unclear" and state what additional info is needed.',
+    expectedOutput: 'Verdict badge + uncertainty indicator. If "unclear": green badge "✓ Uncertainty expressed". If confident verdict on ambiguous receipt: orange "⚠ Confident verdict on ambiguous receipt".',
+    layer: 'Layer 3 — Reasoning & Verdict',
+    prompt: 'PROMPTS.verdictCotE5 — 5-step CoT with explicit information sufficiency check as final step.',
+    experimentsUsing: 'E5 reuses the /api/verdict endpoint with useE5Prompt: true flag. Compare against E3 to measure uncertainty expression improvement.',
+  },
+  e6: {
+    title: 'E6: Adversarial Policy Stress Test',
+    hypothesis: 'Models distinguish between clear, vague, and contradictory policies and adjust verdict confidence accordingly. Hallucination occurs when model claims a vague/contradictory policy is "clear".',
+    methodology: 'Same receipt evaluated under all 3 policy variants (clear/vague/contradictory) in parallel. Each variant uses the adversarial prompt that includes policy_clarity assessment. Server detects hallucination: policy !== clear && model says "clear".',
+    expectedOutput: '3-column grid showing verdict per policy. Policy clarity badge per column. Orange "⚠ hallucination" badge when model misassesses policy clarity.',
+    layer: 'Layer 2 + 3 — Policy Grounding + Reasoning',
+    prompt: 'PROMPTS.adversarial — asks model to assess policy quality (clear/vague/contradictory) AND produce verdict. Step 3: "If the policy is contradictory, return unclear — do NOT resolve contradictions."',
+    experimentsUsing: 'E6 depends on all 3 policy variants. Editing the contradictory policy in Policy Editor will affect E6 results.',
+  },
+}
+
+// Expose for onclick handlers
+window.APP = window.APP || {}
+window.APP.showExperimentInfo = showExperimentInfo
+window.APP.showModal = showModal
+window.APP.closeModal = closeModal
+
 // ─── Shared State Manager (sessionStorage) ──────────────────────────────────
 
 /**
