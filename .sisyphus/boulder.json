@@ -1,0 +1,23 @@
+{
+  "active_plan": "/Volumes/extdisk/WORK/RND2026/RND1/.sisyphus/plans/experiment-polish.md",
+  "started_at": "2026-07-14T14:22:09.239Z",
+  "session_ids": [
+    "ses_09f430885ffe3ZfzlkW8agYjUe"
+  ],
+  "session_origins": {
+    "ses_09f430885ffe3ZfzlkW8agYjUe": "direct"
+  },
+  "plan_name": "experiment-polish",
+  "agent": "atlas",
+  "task_sessions": {
+    "todo:1": {
+      "task_key": "todo:1",
+      "task_label": "1",
+      "task_title": "Fix API Key localStorage Inconsistency",
+      "session_id": "ses_09efd37bbffekSF4QBPGbY2e0C",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-07-14T14:24:02.010Z"
+    }
+  }
+}

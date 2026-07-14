@@ -1,0 +1,14 @@
+/* Tailwind is loaded via CDN — this file only adds custom classes */
+
+/* Active tab underline */
+.tab-btn.active {
+  border-bottom: 2px solid #2563eb;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+/* Verdict badge colors */
+.verdict-justified { background: #dcfce7; border: 1px solid #4ade80; color: #15803d; }
+.verdict-suspicious { background: #fee2e2; border: 1px solid #f87171; color: #b91c1c; }
+.verdict-unclear { background: #fef9c3; border: 1px solid #facc15; color: #92400e; }
+.verdict-error { background: #f3f4f6; border: 1px solid #9ca3af; color: #374151; }

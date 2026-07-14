@@ -2,10 +2,316 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Policy Semantic Audit</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/style.css">
 </head>
-<body class="bg-gray-50 text-gray-900">
-  <h1 class="text-2xl font-bold p-8">Policy Semantic Audit — Loading...</h1>
+<body class="bg-gray-50 min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-gray-200 px-6 py-4">
+    <h1 class="text-xl font-bold text-gray-900">Policy Semantic Audit</h1>
+    <p class="text-sm text-gray-500 mt-0.5">AI-driven expense justification research platform</p>
+  </header>
+
+  <!-- Tab Navigation -->
+  <nav class="bg-white border-b border-gray-200 px-6 flex gap-0 overflow-x-auto">
+    <button class="tab-btn active px-4 py-3 text-sm whitespace-nowrap" data-tab="e1">E1: OCR</button>
+    <button class="tab-btn px-4 py-3 text-sm whitespace-nowrap" data-tab="e2">E2: No-CoT</button>
+    <button class="tab-btn px-4 py-3 text-sm whitespace-nowrap" data-tab="e3">E3: CoT</button>
+    <button class="tab-btn px-4 py-3 text-sm whitespace-nowrap" data-tab="e4">E4: Phase</button>
+    <button class="tab-btn px-4 py-3 text-sm whitespace-nowrap" data-tab="e5">E5: Ambiguity</button>
+    <button class="tab-btn px-4 py-3 text-sm whitespace-nowrap" data-tab="e6">E6: Adversarial</button>
+    <button class="tab-btn px-4 py-3 text-sm whitespace-nowrap" data-tab="annotate">Annotate</button>
+    <button class="tab-btn px-4 py-3 text-sm whitespace-nowrap ml-auto" data-tab="settings">⚙ Settings</button>
+  </nav>
+
+  <!-- Tab Panels -->
+  <main class="max-w-4xl mx-auto px-6 py-8">
+
+    <!-- E1: OCR Extraction -->
+    <div id="tab-e1" class="tab-panel">
+      <h2 class="text-lg font-semibold mb-1">E1: OCR Extraction Baseline</h2>
+      <p class="text-sm text-gray-500 mb-4">Upload a receipt — the model extracts all available fields: vendor details, tax IDs, line items with prices, payment method, and more.</p>
+      <div class="bg-white rounded-lg border border-gray-200 p-6">
+        <label class="block text-sm font-medium mb-2">Receipt file (JPG, PNG, PDF)</label>
+        <input type="file" id="e1-file" accept="image/*,.pdf" class="block w-full text-sm border border-gray-300 rounded px-3 py-2 mb-4">
+        <button id="e1-btn" data-label="Extract Fields" onclick="runE1()"
+          class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+          Extract Fields
+        </button>
+      </div>
+      <div id="e1-result" class="mt-4"></div>
+    </div>
+
+    <!-- E2: No-CoT Verdict -->
+    <div id="tab-e2" class="tab-panel hidden">
+      <h2 class="text-lg font-semibold mb-1">E2: Zero-shot Verdict (No Chain-of-Thought)</h2>
+      <p class="text-sm text-gray-500 mb-4">Upload a receipt — model gives a direct verdict without step-by-step reasoning.</p>
+      <div class="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Receipt file</label>
+          <input type="file" id="e2-file" accept="image/*,.pdf" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">Policy variant</label>
+            <select id="e2-policy" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+              <option value="clear">Clear policy</option>
+              <option value="vague">Vague policy</option>
+              <option value="contradictory">Contradictory policy</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Project phase</label>
+            <select id="e2-phase" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+              <option value="0">Phase 1: Infrastructure Setup</option>
+              <option value="1" selected>Phase 2: Experimentation</option>
+              <option value="2">Phase 3: Evaluation &amp; Documentation</option>
+            </select>
+          </div>
+        </div>
+        <button id="e2-btn" data-label="Get Verdict" onclick="runE2()"
+          class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+          Get Verdict
+        </button>
+      </div>
+      <div id="e2-result" class="mt-4"></div>
+    </div>
+
+    <!-- E3: CoT Reasoning -->
+    <div id="tab-e3" class="tab-panel hidden">
+      <h2 class="text-lg font-semibold mb-1">E3: Chain-of-Thought Reasoning</h2>
+      <p class="text-sm text-gray-500 mb-4">Same as E2, but the model reasons step by step and shows its work.</p>
+      <div class="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Receipt file</label>
+          <input type="file" id="e3-file" accept="image/*,.pdf" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">Policy variant</label>
+            <select id="e3-policy" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+              <option value="clear">Clear policy</option>
+              <option value="vague">Vague policy</option>
+              <option value="contradictory">Contradictory policy</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Project phase</label>
+            <select id="e3-phase" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+              <option value="0">Phase 1: Infrastructure Setup</option>
+              <option value="1" selected>Phase 2: Experimentation</option>
+              <option value="2">Phase 3: Evaluation &amp; Documentation</option>
+            </select>
+          </div>
+        </div>
+        <button id="e3-btn" data-label="Reason &amp; Verdict" onclick="runE3()"
+          class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+          Reason &amp; Verdict
+        </button>
+      </div>
+      <div id="e3-result" class="mt-4"></div>
+    </div>
+
+    <!-- E4: Phase Sensitivity -->
+    <div id="tab-e4" class="tab-panel hidden">
+      <h2 class="text-lg font-semibold mb-1">E4: Phase-Sensitive Reasoning</h2>
+      <p class="text-sm text-gray-500 mb-4">Upload a receipt — see how the verdict changes across all 3 project phases side by side.</p>
+      <div class="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Receipt file</label>
+          <input type="file" id="e4-file" accept="image/*,.pdf" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Policy variant</label>
+          <select id="e4-policy" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+            <option value="clear">Clear policy</option>
+            <option value="vague">Vague policy</option>
+            <option value="contradictory">Contradictory policy</option>
+          </select>
+        </div>
+        <button id="e4-btn" data-label="Test All Phases" onclick="runE4()"
+          class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+          Test All Phases
+        </button>
+      </div>
+      <div id="e4-result" class="mt-4"></div>
+    </div>
+
+    <!-- E5: Ambiguity -->
+    <div id="tab-e5" class="tab-panel hidden">
+      <h2 class="text-lg font-semibold mb-1">E5: Ambiguity &amp; Uncertainty Handling</h2>
+      <p class="text-sm text-gray-500 mb-4">Upload an ambiguous receipt — does the model express uncertainty or force a confident verdict?</p>
+      <div class="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Receipt file</label>
+          <input type="file" id="e5-file" accept="image/*,.pdf" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">Policy variant</label>
+            <select id="e5-policy" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+              <option value="clear">Clear policy</option>
+              <option value="vague">Vague policy</option>
+              <option value="contradictory">Contradictory policy</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Project phase</label>
+            <select id="e5-phase" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+              <option value="0">Phase 1: Infrastructure Setup</option>
+              <option value="1" selected>Phase 2: Experimentation</option>
+              <option value="2">Phase 3: Evaluation &amp; Documentation</option>
+            </select>
+          </div>
+        </div>
+        <button id="e5-btn" data-label="Analyse Ambiguity" onclick="runE5()"
+          class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+          Analyse Ambiguity
+        </button>
+      </div>
+      <div id="e5-result" class="mt-4"></div>
+    </div>
+
+    <!-- E6: Adversarial -->
+    <div id="tab-e6" class="tab-panel hidden">
+      <h2 class="text-lg font-semibold mb-1">E6: Adversarial Policy Stress Test</h2>
+      <p class="text-sm text-gray-500 mb-4">Upload a receipt — see verdicts under all 3 policy variants simultaneously. Hallucination badges appear when the model misassesses policy clarity.</p>
+      <div class="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Receipt file</label>
+          <input type="file" id="e6-file" accept="image/*,.pdf" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Project phase</label>
+          <select id="e6-phase" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+            <option value="0">Phase 1: Infrastructure Setup</option>
+            <option value="1" selected>Phase 2: Experimentation</option>
+            <option value="2">Phase 3: Evaluation &amp; Documentation</option>
+          </select>
+        </div>
+        <button id="e6-btn" data-label="Test All Policies" onclick="runE6()"
+          class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+          Test All Policies
+        </button>
+      </div>
+      <div id="e6-result" class="mt-4"></div>
+    </div>
+
+    <!-- Annotate -->
+    <div id="tab-annotate" class="tab-panel hidden">
+      <h2 class="text-lg font-semibold mb-1">Ground Truth Annotation</h2>
+      <p class="text-sm text-gray-500 mb-4">Annotate receipts with human verdicts for paper metrics. Data saved to <code>data/annotations/ground_truth.json</code>.</p>
+      <div class="bg-white rounded-lg border border-gray-200 p-6 space-y-4 max-w-lg">
+        <div>
+          <label class="block text-sm font-medium mb-1">Receipt</label>
+          <select id="ann-file" class="block w-full text-sm border border-gray-300 rounded px-3 py-2" onchange="loadAnnotation()"></select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium mb-1">Vendor</label>
+            <input id="ann-vendor" type="text" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Date (YYYY-MM-DD)</label>
+            <input id="ann-date" type="text" placeholder="2025-10-07" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Amount</label>
+            <input id="ann-amount" type="number" step="0.01" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Currency</label>
+            <input id="ann-currency" type="text" placeholder="EUR" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Category</label>
+          <select id="ann-category" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+            <option value="equipment">Equipment</option>
+            <option value="software">Software</option>
+            <option value="travel">Travel</option>
+            <option value="meals">Meals</option>
+            <option value="services">Services</option>
+            <option value="supplies">Supplies</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Human Verdict</label>
+          <select id="ann-verdict" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+            <option value="justified">Justified</option>
+            <option value="suspicious">Suspicious</option>
+            <option value="unclear">Unclear</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Verdict Reason (one sentence)</label>
+          <input id="ann-reason" type="text" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="ann-ambiguous" class="rounded">
+          <label for="ann-ambiguous" class="text-sm">Mark as ambiguous (reasonable reviewers might disagree)</label>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Notes</label>
+          <input id="ann-notes" type="text" placeholder="Quality issues, unusual format, etc." class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+        </div>
+        <button onclick="saveAnnotation()"
+          class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700">
+          Save Annotation
+        </button>
+        <div id="ann-result" class="mt-2 text-sm"></div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div id="tab-settings" class="tab-panel hidden">
+      <h2 class="text-lg font-semibold mb-1">Settings</h2>
+      <p class="text-sm text-gray-500 mb-4">Configure the API key and models used for all experiments.</p>
+      <div class="bg-white rounded-lg border border-gray-200 p-6 space-y-4 max-w-lg">
+        <div>
+          <label class="block text-sm font-medium mb-1">OpenRouter API Key</label>
+          <input type="password" id="s-apikey" placeholder="sk-or-..." autocomplete="off"
+            class="block w-full text-sm border border-gray-300 rounded px-3 py-2 font-mono">
+          <p class="text-xs text-gray-400 mt-1">Stored in browser session only — not persisted to disk. Re-enter after page refresh.</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Vision Model (OCR — Layer 1)</label>
+          <select id="s-vision-model" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+            <option value="google/gemini-2.5-flash">google/gemini-2.5-flash (recommended)</option>
+            <option value="qwen/qwen2.5-vl-72b-instruct">qwen/qwen2.5-vl-72b-instruct</option>
+            <option value="anthropic/claude-sonnet-4-5">anthropic/claude-sonnet-4-5</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Reasoning Model (Verdict — Layer 3)</label>
+          <select id="s-model" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+            <option value="google/gemini-2.5-flash">google/gemini-2.5-flash (recommended)</option>
+            <option value="qwen/qwen2.5-72b-instruct">qwen/qwen2.5-72b-instruct</option>
+            <option value="mistralai/mixtral-8x7b-instruct">mistralai/mixtral-8x7b-instruct</option>
+            <option value="anthropic/claude-sonnet-4-5">anthropic/claude-sonnet-4-5</option>
+          </select>
+          <p class="text-xs text-gray-400 mt-1">Switch models to compare behavior across E2–E6.</p>
+        </div>
+        <div class="flex gap-3 pt-2">
+          <button onclick="saveSettings()"
+            class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700">
+            Save Settings
+          </button>
+          <button onclick="testConnection()"
+            class="border border-gray-300 bg-white px-4 py-2 rounded text-sm font-medium hover:bg-gray-50">
+            Test Connection
+          </button>
+        </div>
+        <div id="settings-result" class="mt-2 text-sm"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="/app.js"></script>
 </body>
 </html>

@@ -1,28 +1,30 @@
 {
   "policy_name": "clear",
-  "project_name": "AI Receipt Audit System — R&D Project",
-  "description": "An R&D project developing an AI-powered system to audit expense receipts for semantic policy compliance. The project has three sequential phases.",
+  "project_name": "Test",
+  "description": "Test",
   "phases": [
     {
-      "name": "Phase 1: Infrastructure Setup",
-      "description": "Setting up development environment, cloud accounts, APIs, hardware, and tooling.",
-      "allowed": ["computer equipment", "software licenses", "cloud API credits", "office supplies", "technical books"],
-      "restricted": ["team meals (max 2 per month)", "travel within city (max 3 per month)"],
-      "forbidden": ["personal items", "entertainment", "non-project subscriptions", "travel abroad"]
+      "name": "P1",
+      "description": "d1",
+      "allowed": [
+        "x"
+      ],
+      "restricted": [],
+      "forbidden": []
     },
     {
-      "name": "Phase 2: Experimentation",
-      "description": "Running AI model experiments, data collection, annotation, and iterative development.",
-      "allowed": ["API credits (LLM calls)", "data annotation tools", "compute services", "technical conferences (1 max)", "team collaboration meals"],
-      "restricted": ["equipment (only if existing equipment fails)", "software (project-use only)"],
-      "forbidden": ["personal items", "entertainment", "non-technical subscriptions"]
+      "name": "P2",
+      "description": "d2",
+      "allowed": [],
+      "restricted": [],
+      "forbidden": []
     },
     {
-      "name": "Phase 3: Evaluation & Documentation",
-      "description": "Final testing, writing the research paper, and preparing deliverables.",
-      "allowed": ["printing and binding", "library access", "academic journal access", "small team celebration meal"],
-      "restricted": ["API credits (limited budget)", "software (documentation tools only)"],
-      "forbidden": ["new hardware", "travel", "entertainment", "non-documentation expenses"]
+      "name": "P3",
+      "description": "d3",
+      "allowed": [],
+      "restricted": [],
+      "forbidden": []
     }
   ]
 }
