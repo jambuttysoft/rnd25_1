@@ -644,7 +644,7 @@ Critical Path: Task 2 → Task 7 → Task 9 → F1-F4
     Evidence: screenshot
   ```
 
-- [ ] 9. Results Store + CSV/JSON Export
+- [x] 9. Results Store + CSV/JSON Export
 
   **What to do**:
   - Build results store in `public/app.js`:

@@ -280,6 +280,11 @@ async function runE1() {
     // Cache the extraction
     window.APP.state.setExtraction(hash, { ...data.extraction, visionModel, timestamp: new Date().toISOString() })
     showResult('e1-result', renderExtractionResult(data.extraction))
+    ResultsStore.addResult('e1', {
+      config: { visionModel, filename: window.APP.state.getReceipt()?.filename },
+      result: data.extraction,
+      hash: window.APP.state.computeHash(base64),
+    })
     saveCurrentTabState()
   } catch (e) {
     showError('e1-result', e.message)
@@ -316,6 +321,11 @@ async function runE2() {
         <div class="flex items-center gap-3 mb-2">${verdictBadge(data.verdict)}</div>
         <p class="text-sm text-gray-700">${escHtml(data.reason)}</p>
       </div>`);
+    ResultsStore.addResult('e2', {
+      config: { model, visionModel, policy: document.getElementById('e2-policy')?.value, phase: parseInt(document.getElementById('e2-phase')?.value) },
+      result: { verdict: data.verdict, reason: data.reason, reasoning: data.reasoning },
+      receipt: { filename: window.APP.state.getReceipt()?.filename },
+    })
     saveCurrentTabState();
   } catch (e) {
     showError('e2-result', e.message);
@@ -357,6 +367,11 @@ async function runE3() {
             <div class="mt-2 p-3 bg-gray-50 rounded text-gray-700 whitespace-pre-wrap font-mono text-xs leading-relaxed">${escHtml(data.reasoning)}</div>
           </details>` : ''}
       </div>`);
+    ResultsStore.addResult('e3', {
+      config: { model, visionModel, policy: document.getElementById('e3-policy')?.value, phase: parseInt(document.getElementById('e3-phase')?.value) },
+      result: { verdict: data.verdict, reason: data.reason, reasoning: data.reasoning },
+      receipt: { filename: window.APP.state.getReceipt()?.filename },
+    })
     saveCurrentTabState();
   } catch (e) {
     showError('e3-result', e.message);
@@ -400,6 +415,11 @@ async function runE4() {
               </details>` : ''}
           </div>`).join('')}
       </div>`);
+    ResultsStore.addResult('e4', {
+      config: { model, visionModel, policy: document.getElementById('e4-policy')?.value },
+      result: { phases: data.phases },
+      receipt: { filename: window.APP.state.getReceipt()?.filename },
+    })
     saveCurrentTabState();
   } catch (e) {
     showError('e4-result', e.message);
@@ -450,6 +470,11 @@ async function runE5() {
             <div class="mt-2 p-3 bg-gray-50 rounded text-gray-700 whitespace-pre-wrap font-mono text-xs leading-relaxed">${escHtml(data.reasoning)}</div>
           </details>` : ''}
       </div>`);
+    ResultsStore.addResult('e5', {
+      config: { model, visionModel, policy: document.getElementById('e5-policy')?.value, phase: parseInt(document.getElementById('e5-phase')?.value) },
+      result: { verdict: data.verdict, reason: data.reason, reasoning: data.reasoning },
+      receipt: { filename: window.APP.state.getReceipt()?.filename },
+    })
     saveCurrentTabState();
   } catch (e) {
     showError('e5-result', e.message);
@@ -500,6 +525,11 @@ async function runE6() {
               </details>` : ''}
           </div>`).join('')}
       </div>`);
+    ResultsStore.addResult('e6', {
+      config: { model, visionModel, phase: parseInt(document.getElementById('e6-phase')?.value) },
+      result: { policies: data.policies },
+      receipt: { filename: window.APP.state.getReceipt()?.filename },
+    })
     saveCurrentTabState();
   } catch (e) {
     showError('e6-result', e.message);
@@ -573,6 +603,106 @@ async function saveAnnotation() {
   } catch (e) {
     showError('ann-result', e.message);
   }
+}
+
+// ─── Results Store (sessionStorage-backed) ─────────────────────────────────
+
+const ResultsStore = {
+  _getAll() {
+    try {
+      const raw = sessionStorage.getItem('psa_results')
+      return raw ? JSON.parse(raw) : []
+    } catch { return [] }
+  },
+
+  _saveAll(results) {
+    try {
+      sessionStorage.setItem('psa_results', JSON.stringify(results))
+    } catch (e) {
+      console.warn('sessionStorage quota exceeded for results', e.message)
+    }
+  },
+
+  addResult(experimentId, data) {
+    const results = this._getAll()
+    const entry = {
+      id: `${experimentId}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      experiment: experimentId,
+      timestamp: new Date().toISOString(),
+      ...data,
+    }
+    results.push(entry)
+    this._saveAll(results)
+    return entry
+  },
+
+  getResults(experimentId) {
+    return this._getAll().filter(r => r.experiment === experimentId)
+  },
+
+  getAllResults() {
+    return this._getAll()
+  },
+
+  clearResults(experimentId) {
+    if (experimentId) {
+      this._saveAll(this._getAll().filter(r => r.experiment !== experimentId))
+    } else {
+      this._saveAll([])
+    }
+  },
+
+  clearAllResults() {
+    this._saveAll([])
+  },
+}
+
+function downloadFile(content, filename, mimeType) {
+  const blob = new Blob([content], { type: mimeType })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+function exportResultAsCSV(experimentId) {
+  const results = ResultsStore.getResults(experimentId)
+  if (!results.length) return
+
+  // Build CSV based on experiment type
+  let headers, rows
+  if (['e2', 'e3', 'e5'].includes(experimentId)) {
+    headers = ['timestamp', 'model', 'policy', 'phase', 'verdict', 'reason']
+    rows = results.map(r => [
+      r.timestamp, r.config?.model || '', r.config?.policy || '', r.config?.phase ?? '',
+      r.result?.verdict || '', r.result?.reason || ''
+    ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+  } else if (experimentId === 'e1') {
+    headers = ['timestamp', 'model', 'vendor', 'date', 'amount', 'currency', 'category']
+    rows = results.map(r => [
+      r.timestamp, r.config?.visionModel || '',
+      r.result?.vendor || '', r.result?.date || '', r.result?.amount ?? '',
+      r.result?.currency || '', r.result?.category || ''
+    ].map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))
+  } else {
+    return // E4/E6 — JSON only
+  }
+
+  const csv = [headers.join(','), ...rows].join('\n')
+  downloadFile(csv, `psa-${experimentId}-${Date.now()}.csv`, 'text/csv;charset=utf-8')
+}
+
+function exportResultAsJSON(experimentId) {
+  const results = experimentId ? ResultsStore.getResults(experimentId) : ResultsStore.getAllResults()
+  if (!results.length) return
+  const filename = experimentId
+    ? `psa-${experimentId}-${Date.now()}.json`
+    : `psa-all-results-${Date.now()}.json`
+  downloadFile(JSON.stringify(results, null, 2), filename, 'application/json')
 }
 
 // ─── Modal System ──────────────────────────────────────────────────────────

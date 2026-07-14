@@ -55,6 +55,10 @@
         </button>
       </div>
       <div id="e1-result" class="mt-4"></div>
+      <div class="mt-2 flex gap-2">
+        <button onclick="exportResultAsJSON('e1')" class="text-xs text-gray-400 hover:text-blue-600">Export JSON</button>
+        <button onclick="exportResultAsCSV('e1')" class="text-xs text-gray-400 hover:text-blue-600">Export CSV</button>
+      </div>
     </div>
 
     <!-- E2: No-CoT Verdict -->
@@ -93,6 +97,10 @@
         </button>
       </div>
       <div id="e2-result" class="mt-4"></div>
+      <div class="mt-2 flex gap-2">
+        <button onclick="exportResultAsJSON('e2')" class="text-xs text-gray-400 hover:text-blue-600">Export JSON</button>
+        <button onclick="exportResultAsCSV('e2')" class="text-xs text-gray-400 hover:text-blue-600">Export CSV</button>
+      </div>
     </div>
 
     <!-- E3: CoT Reasoning -->
@@ -131,6 +139,10 @@
         </button>
       </div>
       <div id="e3-result" class="mt-4"></div>
+      <div class="mt-2 flex gap-2">
+        <button onclick="exportResultAsJSON('e3')" class="text-xs text-gray-400 hover:text-blue-600">Export JSON</button>
+        <button onclick="exportResultAsCSV('e3')" class="text-xs text-gray-400 hover:text-blue-600">Export CSV</button>
+      </div>
     </div>
 
     <!-- E4: Phase Sensitivity -->
@@ -159,6 +171,9 @@
         </button>
       </div>
       <div id="e4-result" class="mt-4"></div>
+      <div class="mt-2 flex gap-2">
+        <button onclick="exportResultAsJSON('e4')" class="text-xs text-gray-400 hover:text-blue-600">Export JSON</button>
+      </div>
     </div>
 
     <!-- E5: Ambiguity -->
@@ -197,6 +212,10 @@
         </button>
       </div>
       <div id="e5-result" class="mt-4"></div>
+      <div class="mt-2 flex gap-2">
+        <button onclick="exportResultAsJSON('e5')" class="text-xs text-gray-400 hover:text-blue-600">Export JSON</button>
+        <button onclick="exportResultAsCSV('e5')" class="text-xs text-gray-400 hover:text-blue-600">Export CSV</button>
+      </div>
     </div>
 
     <!-- E6: Adversarial -->
@@ -225,6 +244,9 @@
         </button>
       </div>
       <div id="e6-result" class="mt-4"></div>
+      <div class="mt-2 flex gap-2">
+        <button onclick="exportResultAsJSON('e6')" class="text-xs text-gray-400 hover:text-blue-600">Export JSON</button>
+      </div>
     </div>
 
     <!-- Annotate -->
@@ -375,6 +397,12 @@
           </button>
         </div>
         <div id="settings-result" class="mt-2 text-sm"></div>
+        <hr class="border-gray-200 my-4">
+        <h3 class="text-sm font-semibold text-gray-700 mb-2">Experiment Results</h3>
+        <div class="flex gap-3">
+          <button onclick="exportResultAsJSON(null)" class="border border-gray-300 bg-white px-4 py-2 rounded text-sm font-medium hover:bg-gray-50">Export All Results (JSON)</button>
+          <button onclick="if(confirm('Clear all saved experiment results?')){ResultsStore.clearAllResults();showResult('settings-result','<span class=\\'text-gray-600\\'>✓ Results cleared</span>');}" class="border border-red-200 bg-white px-4 py-2 rounded text-sm font-medium text-red-600 hover:bg-red-50">Clear All Results</button>
+        </div>
       </div>
     </div>
 

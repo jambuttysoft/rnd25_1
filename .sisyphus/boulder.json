@@ -63,6 +63,15 @@
       "agent": "Sisyphus-Junior",
       "category": "quick",
       "updated_at": "2026-07-14T14:37:04.073Z"
+    },
+    "todo:9": {
+      "task_key": "todo:9",
+      "task_label": "9",
+      "task_title": "Results Store + CSV/JSON Export",
+      "session_id": "ses_09ef02653ffeWYGYf1P9YULMXg",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-07-14T14:39:37.166Z"
     }
   }
 }
