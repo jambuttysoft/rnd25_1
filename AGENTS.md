@@ -38,6 +38,10 @@ RND1/
 | Write paper | `paper/00_abstract.md` … `paper/08_conclusion.md` |
 | Understand a specific experiment design | `docs/superpowers/specs/task{N}-{name}.md` |
 | See why a code change was made | `docs/superpowers/specs/` + `docs/superpowers/plans/` |
+| Edit experiment policies | `public/index.html` (Policy Editor tab) + `public/app.js` (`loadPolicyEditor`/`savePolicy`) |
+| Download experiment results | Export JSON/CSV buttons on each experiment tab |
+| Read experiment methodology | ℹ info button on each experiment tab heading |
+| Reset a policy to defaults | Policy Editor tab → Reset to Default button |
 
 ## CONVENTIONS (deviations only)
 - **ESM only.** `import`/`export`. `package.json` has `"type": "module"`. No `require()`.
@@ -81,9 +85,14 @@ Test API health: `curl http://localhost:3000/api/health`
 
 ## NOTES
 - **No `"engines"`, no `"license"` in package.json.** Add if publishing.
-- **`.DS_Store` exists on disk but is NOT in `.gitignore`.** Add it.
+- **`.DS_Store` exists on disk but is now in `.gitignore`.** (Added during CSS polish).
 - **CASH_RECIEPTS is a misspelling of CASH_RECEIPTS** — propagated everywhere. Don't "fix" it without updating all references (`server.js:18`).
 - **Project context doc is authoritative:** `docs/superpowers/specs/00-project-context.md` predates code; spec/plan files are append-only history.
 - **Two commits in git history.** Feature branches not used.
 - **API key in browser**: refresh → re-enter. The Settings tab persists model names in localStorage but NOT the key.
 - **26 receipts → 25 files on disk**: `CASH_RECIEPTS/` listed 26 in spec, ls shows 25 — possible missing file or spec drift; verify if relevant.
+- **New tabs**: "Policy Editor" (9th tab), experiment info modals (ℹ)
+- **State persistence**: sessionStorage — receipt and tab state survive F5
+- **Extraction caching**: Same receipt across experiments uses one vision API call
+- **Export**: CSV for E1/E2/E3/E5, JSON for E4/E6, global export in Settings
+- **Editable policies**: All 3 policy variants editable via Policy Editor tab

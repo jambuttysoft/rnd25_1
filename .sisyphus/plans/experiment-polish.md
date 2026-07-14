@@ -714,7 +714,7 @@ Critical Path: Task 2 → Task 7 → Task 9 → F1-F4
     Evidence: read downloaded file
   ```
 
-- [ ] 10. Scientific Polish — Metadata, Timestamps, Config Snapshots
+- [x] 10. Scientific Polish — Metadata, Timestamps, Config Snapshots
 
   **What to do**:
   - Add experiment metadata display to each result card:
@@ -762,7 +762,7 @@ Critical Path: Task 2 → Task 7 → Task 9 → F1-F4
     Evidence: screenshot
   ```
 
-- [ ] 11. CSS Polish, Edge Cases, Cleanup
+- [x] 11. CSS Polish, Edge Cases, Cleanup
 
   **What to do**:
   - Add all new CSS to `public/style.css`:

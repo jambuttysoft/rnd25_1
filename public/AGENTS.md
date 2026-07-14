@@ -19,6 +19,11 @@ public/
 | Annotation CRUD | `app.js` `initAnnotate()`, `loadAnnotation()`, `saveAnnotation()` | `/api/annotations` GET/POST |
 | Verdict badge colors | `style.css` `.verdict-{justified,suspicious,unclear,error}` | |
 | E1–E6 result rendering | `app.js` `runE1()` … `runE6()` | HTML built via template literals |
+| ℹ experiment info modal | `app.js` `EXPERIMENT_META` config + `showExperimentInfo()` |
+| Shared receipt bar | `app.js` `updateReceiptBar()` + `index.html` `#receipt-bar` |
+| Policy Editor | `app.js` `loadPolicyEditor()`, `savePolicy()` + `index.html` `#tab-policy-editor` |
+| Results export | `app.js` `ResultsStore`, `exportResultAsCSV()`, `exportResultAsJSON()` |
+| Per-tab state | `app.js` `saveCurrentTabState()`, `restoreTabState()`, `_currentTab` |
 
 ## CONVENTIONS
 - **Tailwind via CDN** — `<script src="https://cdn.tailwindcss.com"></script>` in `<head>`. All utility classes work; custom CSS only for verdict badges and tab underline.
@@ -27,6 +32,9 @@ public/
 - **All experiment handlers follow the same shape:** `setLoading(btnId, true)` → fetch → render HTML into result div → `setLoading(btnId, false)` in `finally`.
 - **Result rendering uses template literals with `escHtml()` for user-controlled strings.** Never `${value}` raw.
 - **`data-label` attribute on buttons** preserves original label across `setLoading()` toggles.
+- **State persistence via sessionStorage.** Receipt, tab selections, results, and extraction cache all use sessionStorage (survives F5, clears on tab close).
+- **Extraction cache deduplicates vision calls.** Same receipt hash → same extraction used across experiments.
+- **Export is structured data only.** CSV for flat results (E1/E2/E3/E5), JSON for nested (E4/E6). No HTML exported.
 
 ## ANTI-PATTERNS
 | Forbidden | Reason |

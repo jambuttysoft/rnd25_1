@@ -72,6 +72,15 @@
       "agent": "Sisyphus-Junior",
       "category": "unspecified-high",
       "updated_at": "2026-07-14T14:39:37.166Z"
+    },
+    "todo:10": {
+      "task_key": "todo:10",
+      "task_label": "10",
+      "task_title": "Scientific Polish — Metadata, Timestamps, Config Snapshots",
+      "session_id": "ses_09eede4c6ffe71sA9HbzN1zuDC",
+      "agent": "Sisyphus-Junior",
+      "category": "visual-engineering",
+      "updated_at": "2026-07-14T14:43:58.536Z"
     }
   }
 }

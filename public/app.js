@@ -47,6 +47,10 @@ function saveCurrentTabState() {
     state.lastResult = resultEl.innerHTML
   }
 
+  // Save config snapshot for drift detection
+  const settings = getSettings()
+  state.configSnapshot = { model: settings.model, visionModel: settings.visionModel, policy: state.policy }
+
   window.APP.state.setTabState(tab, state)
 }
 
@@ -67,6 +71,25 @@ function restoreTabState(tabName) {
     const resultEl = document.getElementById(`${tabName}-result`)
     if (resultEl) {
       resultEl.innerHTML = state.lastResult
+    }
+  }
+
+  // Check for config drift
+  if (state.configSnapshot) {
+    const settings = getSettings()
+    const drifted = (
+      state.configSnapshot.model !== settings.model ||
+      state.configSnapshot.visionModel !== settings.visionModel ||
+      (state.configSnapshot.policy && state.configSnapshot.policy !== settings.policy)
+    )
+    if (drifted) {
+      const resultEl = document.getElementById(`${tabName}-result`)
+      if (resultEl && !resultEl.querySelector('.config-drift-badge')) {
+        const drift = document.createElement('div')
+        drift.className = 'config-drift-badge mt-2'
+        drift.textContent = '⚡ Settings changed since last run — results may be stale'
+        resultEl.prepend(drift)
+      }
     }
   }
 }
@@ -179,6 +202,34 @@ function escHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+function buildMetaHtml(opts) {
+  const parts = []
+  if (opts.cached) parts.unshift(`<span class="cache-badge text-xs text-blue-600 bg-blue-50 border border-blue-200 rounded px-2 py-0.5">📦 Cached from ${escHtml(opts.cached)}</span>`)
+  if (opts.model) parts.push(`<span>Model: ${escHtml(opts.model)}</span>`)
+  if (opts.visionModel) parts.push(`<span>Vision: ${escHtml(opts.visionModel)}</span>`)
+  if (opts.policy) parts.push(`<span>Policy: ${escHtml(opts.policy)}</span>`)
+  if (opts.phase !== undefined && opts.phase !== null && opts.phase !== '') {
+    const phaseNum = (parseInt(opts.phase) || 0) + 1
+    parts.push(`<span>Phase: ${phaseNum}</span>`)
+  }
+  if (opts.duration) parts.push(`<span>Time: ${escHtml(opts.duration)}s</span>`)
+  if (opts.timestamp) parts.push(`<span class="meta-text">${escHtml(opts.timestamp)}</span>`)
+  return parts.length
+    ? `<div class="meta-row mt-3 pt-2 border-t border-gray-100 text-xs text-gray-400 flex flex-wrap gap-x-4 gap-y-1">${parts.join('')}</div>`
+    : ''
+}
+
+function updateTabRunCounts() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    const tab = btn.dataset.tab
+    if (!tab || ['settings', 'annotate', 'policy-editor'].includes(tab)) return
+    const count = ResultsStore.getResults(tab).length
+    // Strip any existing "(N runs)" suffix to avoid stacking
+    const baseLabel = btn.textContent.replace(/\s*\(\d+ runs?\)/g, '').trim()
+    btn.textContent = count > 0 ? `${baseLabel} (${count} runs)` : baseLabel
+  })
+}
+
 // Read file as base64 string (strips data: prefix)
 async function getFileData(inputId) {
   const input = document.getElementById(inputId)
@@ -255,6 +306,7 @@ async function runE1() {
   const btnId = 'e1-btn'
   setLoading(btnId, true)
   showResult('e1-result', '')
+  const startTime = performance.now()
   try {
     const { base64, mimeType } = await getFileData('e1-file')
     const { apiKey, visionModel } = getSettings()
@@ -264,8 +316,16 @@ async function runE1() {
     const hash = window.APP.state.computeHash(base64)
     const cached = window.APP.state.getExtraction(hash)
     if (cached && cached.visionModel === visionModel) {
-      showResult('e1-result', `<div class="text-xs text-gray-400 mb-2">Using cached extraction from ${new Date(cached.timestamp).toLocaleTimeString()}</div>` + renderExtractionResult(cached))
+      const cachedTime = new Date(cached.timestamp).toLocaleTimeString()
+      const metaHtml = buildMetaHtml({ visionModel, cached: cachedTime, timestamp: cached.timestamp })
+      showResult('e1-result', renderExtractionResult(cached) + metaHtml)
+      ResultsStore.addResult('e1', {
+        config: { visionModel, filename: window.APP.state.getReceipt()?.filename, cached: true },
+        result: cached,
+        hash,
+      })
       saveCurrentTabState()
+      updateTabRunCounts()
       return
     }
 
@@ -278,14 +338,18 @@ async function runE1() {
     if (data.error) return showError('e1-result', data.error)
 
     // Cache the extraction
-    window.APP.state.setExtraction(hash, { ...data.extraction, visionModel, timestamp: new Date().toISOString() })
-    showResult('e1-result', renderExtractionResult(data.extraction))
+    const now = new Date().toISOString()
+    window.APP.state.setExtraction(hash, { ...data.extraction, visionModel, timestamp: now })
+    const duration = ((performance.now() - startTime) / 1000).toFixed(1)
+    const metaHtml = buildMetaHtml({ visionModel, duration, timestamp: now })
+    showResult('e1-result', renderExtractionResult(data.extraction) + metaHtml)
     ResultsStore.addResult('e1', {
       config: { visionModel, filename: window.APP.state.getReceipt()?.filename },
       result: data.extraction,
       hash: window.APP.state.computeHash(base64),
     })
     saveCurrentTabState()
+    updateTabRunCounts()
   } catch (e) {
     showError('e1-result', e.message)
   } finally {
@@ -299,6 +363,7 @@ async function runE2() {
   const btnId = 'e2-btn';
   setLoading(btnId, true);
   showResult('e2-result', '');
+  const startTime = performance.now();
   try {
     const { base64, mimeType } = await getFileData('e2-file');
     const { apiKey, visionModel, model } = getSettings();
@@ -316,17 +381,23 @@ async function runE2() {
     });
     const data = await res.json();
     if (data.error) return showError('e2-result', data.error);
+    const duration = ((performance.now() - startTime) / 1000).toFixed(1);
+    const policy = document.getElementById('e2-policy')?.value;
+    const phase = document.getElementById('e2-phase')?.value;
+    const metaHtml = buildMetaHtml({ model, visionModel, policy, phase, duration });
     showResult('e2-result', `
       <div class="bg-white rounded-lg border border-gray-200 p-4">
         <div class="flex items-center gap-3 mb-2">${verdictBadge(data.verdict)}</div>
         <p class="text-sm text-gray-700">${escHtml(data.reason)}</p>
+        ${metaHtml}
       </div>`);
     ResultsStore.addResult('e2', {
-      config: { model, visionModel, policy: document.getElementById('e2-policy')?.value, phase: parseInt(document.getElementById('e2-phase')?.value) },
+      config: { model, visionModel, policy, phase: parseInt(phase) },
       result: { verdict: data.verdict, reason: data.reason, reasoning: data.reasoning },
       receipt: { filename: window.APP.state.getReceipt()?.filename },
     })
     saveCurrentTabState();
+    updateTabRunCounts();
   } catch (e) {
     showError('e2-result', e.message);
   } finally {
@@ -340,6 +411,7 @@ async function runE3() {
   const btnId = 'e3-btn';
   setLoading(btnId, true);
   showResult('e3-result', '');
+  const startTime = performance.now();
   try {
     const { base64, mimeType } = await getFileData('e3-file');
     const { apiKey, visionModel, model } = getSettings();
@@ -357,6 +429,10 @@ async function runE3() {
     });
     const data = await res.json();
     if (data.error) return showError('e3-result', data.error);
+    const duration = ((performance.now() - startTime) / 1000).toFixed(1);
+    const policy = document.getElementById('e3-policy')?.value;
+    const phase = document.getElementById('e3-phase')?.value;
+    const metaHtml = buildMetaHtml({ model, visionModel, policy, phase, duration });
     showResult('e3-result', `
       <div class="bg-white rounded-lg border border-gray-200 p-4 space-y-3">
         <div class="flex items-center gap-3">${verdictBadge(data.verdict)}</div>
@@ -366,13 +442,15 @@ async function runE3() {
             <summary class="cursor-pointer text-gray-500 hover:text-gray-700 font-medium">Show reasoning chain</summary>
             <div class="mt-2 p-3 bg-gray-50 rounded text-gray-700 whitespace-pre-wrap font-mono text-xs leading-relaxed">${escHtml(data.reasoning)}</div>
           </details>` : ''}
+        ${metaHtml}
       </div>`);
     ResultsStore.addResult('e3', {
-      config: { model, visionModel, policy: document.getElementById('e3-policy')?.value, phase: parseInt(document.getElementById('e3-phase')?.value) },
+      config: { model, visionModel, policy, phase: parseInt(phase) },
       result: { verdict: data.verdict, reason: data.reason, reasoning: data.reasoning },
       receipt: { filename: window.APP.state.getReceipt()?.filename },
     })
     saveCurrentTabState();
+    updateTabRunCounts();
   } catch (e) {
     showError('e3-result', e.message);
   } finally {
@@ -386,6 +464,7 @@ async function runE4() {
   const btnId = 'e4-btn';
   setLoading(btnId, true);
   showResult('e4-result', '');
+  const startTime = performance.now();
   try {
     const { base64, mimeType } = await getFileData('e4-file');
     const { apiKey, visionModel, model } = getSettings();
@@ -401,6 +480,9 @@ async function runE4() {
     });
     const data = await res.json();
     if (data.error) return showError('e4-result', data.error);
+    const duration = ((performance.now() - startTime) / 1000).toFixed(1);
+    const policy = document.getElementById('e4-policy')?.value;
+    const metaHtml = buildMetaHtml({ model, visionModel, policy, duration });
     showResult('e4-result', `
       <div class="grid grid-cols-3 gap-4">
         ${data.phases.map(p => `
@@ -414,13 +496,15 @@ async function runE4() {
                 <div class="mt-1 p-2 bg-gray-50 rounded whitespace-pre-wrap font-mono text-xs leading-relaxed">${escHtml(p.reasoning)}</div>
               </details>` : ''}
           </div>`).join('')}
-      </div>`);
+      </div>
+      ${metaHtml}`);
     ResultsStore.addResult('e4', {
-      config: { model, visionModel, policy: document.getElementById('e4-policy')?.value },
+      config: { model, visionModel, policy },
       result: { phases: data.phases },
       receipt: { filename: window.APP.state.getReceipt()?.filename },
     })
     saveCurrentTabState();
+    updateTabRunCounts();
   } catch (e) {
     showError('e4-result', e.message);
   } finally {
@@ -435,6 +519,7 @@ async function runE5() {
   const btnId = 'e5-btn';
   setLoading(btnId, true);
   showResult('e5-result', '');
+  const startTime = performance.now();
   try {
     const { base64, mimeType } = await getFileData('e5-file');
     const { apiKey, visionModel, model } = getSettings();
@@ -455,6 +540,10 @@ async function runE5() {
     if (data.error) return showError('e5-result', data.error);
 
     const isUnclear = data.verdict === 'unclear';
+    const duration = ((performance.now() - startTime) / 1000).toFixed(1);
+    const policy = document.getElementById('e5-policy')?.value;
+    const phase = document.getElementById('e5-phase')?.value;
+    const metaHtml = buildMetaHtml({ model, visionModel, policy, phase, duration });
     showResult('e5-result', `
       <div class="bg-white rounded-lg border border-gray-200 p-4 space-y-3">
         <div class="flex items-center gap-3">
@@ -469,13 +558,15 @@ async function runE5() {
             <summary class="cursor-pointer text-gray-500 font-medium">Show 5-step reasoning</summary>
             <div class="mt-2 p-3 bg-gray-50 rounded text-gray-700 whitespace-pre-wrap font-mono text-xs leading-relaxed">${escHtml(data.reasoning)}</div>
           </details>` : ''}
+        ${metaHtml}
       </div>`);
     ResultsStore.addResult('e5', {
-      config: { model, visionModel, policy: document.getElementById('e5-policy')?.value, phase: parseInt(document.getElementById('e5-phase')?.value) },
+      config: { model, visionModel, policy, phase: parseInt(phase) },
       result: { verdict: data.verdict, reason: data.reason, reasoning: data.reasoning },
       receipt: { filename: window.APP.state.getReceipt()?.filename },
     })
     saveCurrentTabState();
+    updateTabRunCounts();
   } catch (e) {
     showError('e5-result', e.message);
   } finally {
@@ -489,6 +580,7 @@ async function runE6() {
   const btnId = 'e6-btn';
   setLoading(btnId, true);
   showResult('e6-result', '');
+  const startTime = performance.now();
   try {
     const { base64, mimeType } = await getFileData('e6-file');
     const { apiKey, visionModel, model } = getSettings();
@@ -505,6 +597,9 @@ async function runE6() {
     const data = await res.json();
     if (data.error) return showError('e6-result', data.error);
 
+    const duration = ((performance.now() - startTime) / 1000).toFixed(1);
+    const phase = document.getElementById('e6-phase')?.value;
+    const metaHtml = buildMetaHtml({ model, visionModel, phase, duration });
     showResult('e6-result', `
       <div class="grid grid-cols-3 gap-4">
         ${data.policies.map(p => `
@@ -524,13 +619,15 @@ async function runE6() {
                 <div class="mt-1 p-2 bg-gray-50 rounded whitespace-pre-wrap font-mono text-xs leading-relaxed">${escHtml(p.reasoning)}</div>
               </details>` : ''}
           </div>`).join('')}
-      </div>`);
+      </div>
+      ${metaHtml}`);
     ResultsStore.addResult('e6', {
-      config: { model, visionModel, phase: parseInt(document.getElementById('e6-phase')?.value) },
+      config: { model, visionModel, phase: parseInt(phase) },
       result: { policies: data.policies },
       receipt: { filename: window.APP.state.getReceipt()?.filename },
     })
     saveCurrentTabState();
+    updateTabRunCounts();
   } catch (e) {
     showError('e6-result', e.message);
   } finally {
@@ -1099,6 +1196,7 @@ document.getElementById('receipt-clear-btn')?.addEventListener('click', () => {
 })
 
 loadSettings()
+updateTabRunCounts()
 
 // Restore shared receipt on page load
 const savedReceipt = window.APP.state.getReceipt()
