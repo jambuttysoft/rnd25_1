@@ -310,7 +310,6 @@ async function runE1() {
   try {
     const { base64, mimeType } = await getFileData('e1-file')
     const { apiKey, visionModel } = getSettings()
-    if (!apiKey) { showError('e1-result', 'Enter your API key in Settings first.'); return }
 
     // Check extraction cache
     const hash = window.APP.state.computeHash(base64)
@@ -367,7 +366,7 @@ async function runE2() {
   try {
     const { base64, mimeType } = await getFileData('e2-file');
     const { apiKey, visionModel, model } = getSettings();
-    if (!apiKey) { showError('e2-result', 'Enter your API key in Settings first.'); return; }
+    
 
     const res = await fetch('/api/verdict', {
       method: 'POST',
@@ -415,7 +414,7 @@ async function runE3() {
   try {
     const { base64, mimeType } = await getFileData('e3-file');
     const { apiKey, visionModel, model } = getSettings();
-    if (!apiKey) { showError('e3-result', 'Enter your API key in Settings first.'); return; }
+    
 
     const res = await fetch('/api/verdict', {
       method: 'POST',
@@ -468,7 +467,7 @@ async function runE4() {
   try {
     const { base64, mimeType } = await getFileData('e4-file');
     const { apiKey, visionModel, model } = getSettings();
-    if (!apiKey) { showError('e4-result', 'Enter your API key in Settings first.'); return; }
+    
 
     const res = await fetch('/api/phase-sensitivity', {
       method: 'POST',
@@ -523,7 +522,7 @@ async function runE5() {
   try {
     const { base64, mimeType } = await getFileData('e5-file');
     const { apiKey, visionModel, model } = getSettings();
-    if (!apiKey) { showError('e5-result', 'Enter your API key in Settings first.'); return; }
+    
 
     const res = await fetch('/api/verdict', {
       method: 'POST',
@@ -584,7 +583,7 @@ async function runE6() {
   try {
     const { base64, mimeType } = await getFileData('e6-file');
     const { apiKey, visionModel, model } = getSettings();
-    if (!apiKey) { showError('e6-result', 'Enter your API key in Settings first.'); return; }
+    
 
     const res = await fetch('/api/adversarial', {
       method: 'POST',
