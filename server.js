@@ -60,7 +60,8 @@ app.get('/api/health', (req, res) => res.json({ ok: true }));
 // ─── POST /api/test-connection ────────────────────────────────────────────────
 // Verify that the API key works by sending a trivial request.
 app.post('/api/test-connection', async (req, res) => {
-  const { apiKey, model } = req.body;
+  const { apiKey: frontKey, model } = req.body;
+  const apiKey = frontKey || process.env.OPENROUTER_API_KEY;
   if (!apiKey) return res.json({ ok: false, error: 'apiKey is required' });
   try {
     const result = await callText(
@@ -78,7 +79,8 @@ app.post('/api/test-connection', async (req, res) => {
 // ─── POST /api/extract ────────────────────────────────────────────────────────
 // E1: Extract structured fields from a receipt image using the vision model.
 app.post('/api/extract', async (req, res) => {
-  const { base64, mimeType, apiKey, model } = req.body;
+  const { base64, mimeType, apiKey: frontKey, model } = req.body;
+  const apiKey = frontKey || process.env.OPENROUTER_API_KEY;
   if (!apiKey) return res.json({ error: 'apiKey is required' });
   if (!base64) return res.json({ error: 'base64 image data is required' });
   try {
@@ -97,7 +99,8 @@ app.post('/api/extract', async (req, res) => {
 // E2, E3, E5: Two-step pipeline — OCR extraction then reasoning verdict.
 // useCot: false → E2, useCot: true → E3 (4-step), useCot: true + useE5Prompt: true → E5 (5-step)
 app.post('/api/verdict', async (req, res) => {
-  const { base64, mimeType, apiKey, model, visionModel, policy: policyName, phase, useCot, useE5Prompt } = req.body;
+  const { base64, mimeType, apiKey: frontKey, model, visionModel, policy: policyName, phase, useCot, useE5Prompt } = req.body;
+  const apiKey = frontKey || process.env.OPENROUTER_API_KEY;
   if (!apiKey) return res.json({ error: 'apiKey is required' });
   if (!base64) return res.json({ error: 'base64 image data is required' });
   try {
@@ -151,7 +154,8 @@ app.post('/api/verdict', async (req, res) => {
 // ─── POST /api/phase-sensitivity ─────────────────────────────────────────────
 // E4: Evaluate the same expense across all 3 project phases in parallel.
 app.post('/api/phase-sensitivity', async (req, res) => {
-  const { base64, mimeType, apiKey, model, visionModel, policy: policyName } = req.body;
+  const { base64, mimeType, apiKey: frontKey, model, visionModel, policy: policyName } = req.body;
+  const apiKey = frontKey || process.env.OPENROUTER_API_KEY;
   if (!apiKey) return res.json({ error: 'apiKey is required' });
   if (!base64) return res.json({ error: 'base64 image data is required' });
   try {
@@ -198,7 +202,8 @@ app.post('/api/phase-sensitivity', async (req, res) => {
 // ─── POST /api/adversarial ────────────────────────────────────────────────────
 // E6: Evaluate the same expense under all 3 policy variants in parallel.
 app.post('/api/adversarial', async (req, res) => {
-  const { base64, mimeType, apiKey, model, visionModel, phase } = req.body;
+  const { base64, mimeType, apiKey: frontKey, model, visionModel, phase } = req.body;
+  const apiKey = frontKey || process.env.OPENROUTER_API_KEY;
   if (!apiKey) return res.json({ error: 'apiKey is required' });
   if (!base64) return res.json({ error: 'base64 image data is required' });
   try {
