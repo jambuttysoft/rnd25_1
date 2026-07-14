@@ -1,15 +1,75 @@
 // ─── Tab routing ────────────────────────────────────────────────────────────
 
+// Track current tab for state persistence
+let _currentTab = 'e1'
+
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
-    btn.classList.add('active');
-    document.getElementById(`tab-${btn.dataset.tab}`).classList.remove('hidden');
-    // Lazy-load annotation data when that tab is first clicked
-    if (btn.dataset.tab === 'annotate') initAnnotate();
-  });
-});
+    const tabName = btn.dataset.tab
+
+    // Save current tab state before switching away
+    saveCurrentTabState()
+
+    // Switch tabs
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'))
+    btn.classList.add('active')
+    document.getElementById(`tab-${tabName}`).classList.remove('hidden')
+    _currentTab = tabName
+
+    // Lazy-load: annotate
+    if (tabName === 'annotate') initAnnotate()
+    // Lazy-load: policy editor
+    if (tabName === 'policy-editor') setTimeout(loadPolicyEditor, 50)
+
+    // Restore target tab state
+    setTimeout(() => restoreTabState(tabName), 10)
+  })
+})
+
+// ─── Per-tab state persistence ────────────────────────────────────────────────
+
+function saveCurrentTabState() {
+  const tab = _currentTab
+  if (!tab || tab.startsWith('settings') || tab === 'annotate' || tab === 'policy-editor') return
+
+  const state = { timestamp: new Date().toISOString() }
+
+  // Save form selections
+  const policyEl = document.getElementById(`${tab}-policy`)
+  const phaseEl = document.getElementById(`${tab}-phase`)
+  if (policyEl) state.policy = policyEl.value
+  if (phaseEl) state.phase = phaseEl.value
+
+  // Save last result HTML
+  const resultEl = document.getElementById(`${tab}-result`)
+  if (resultEl && resultEl.innerHTML.trim()) {
+    state.lastResult = resultEl.innerHTML
+  }
+
+  window.APP.state.setTabState(tab, state)
+}
+
+function restoreTabState(tabName) {
+  if (!tabName || tabName.startsWith('settings') || tabName === 'annotate' || tabName === 'policy-editor') return
+
+  const state = window.APP.state.getTabState(tabName)
+  if (!state) return
+
+  // Restore form selections
+  const policyEl = document.getElementById(`${tabName}-policy`)
+  const phaseEl = document.getElementById(`${tabName}-phase`)
+  if (policyEl && state.policy) policyEl.value = state.policy
+  if (phaseEl && state.phase) phaseEl.value = state.phase
+
+  // Restore last result
+  if (state.lastResult) {
+    const resultEl = document.getElementById(`${tabName}-result`)
+    if (resultEl) {
+      resultEl.innerHTML = state.lastResult
+    }
+  }
+}
 
 // ─── Settings ────────────────────────────────────────────────────────────────
 
@@ -205,6 +265,7 @@ async function runE1() {
     const cached = window.APP.state.getExtraction(hash)
     if (cached && cached.visionModel === visionModel) {
       showResult('e1-result', `<div class="text-xs text-gray-400 mb-2">Using cached extraction from ${new Date(cached.timestamp).toLocaleTimeString()}</div>` + renderExtractionResult(cached))
+      saveCurrentTabState()
       return
     }
 
@@ -219,6 +280,7 @@ async function runE1() {
     // Cache the extraction
     window.APP.state.setExtraction(hash, { ...data.extraction, visionModel, timestamp: new Date().toISOString() })
     showResult('e1-result', renderExtractionResult(data.extraction))
+    saveCurrentTabState()
   } catch (e) {
     showError('e1-result', e.message)
   } finally {
@@ -254,6 +316,7 @@ async function runE2() {
         <div class="flex items-center gap-3 mb-2">${verdictBadge(data.verdict)}</div>
         <p class="text-sm text-gray-700">${escHtml(data.reason)}</p>
       </div>`);
+    saveCurrentTabState();
   } catch (e) {
     showError('e2-result', e.message);
   } finally {
@@ -294,6 +357,7 @@ async function runE3() {
             <div class="mt-2 p-3 bg-gray-50 rounded text-gray-700 whitespace-pre-wrap font-mono text-xs leading-relaxed">${escHtml(data.reasoning)}</div>
           </details>` : ''}
       </div>`);
+    saveCurrentTabState();
   } catch (e) {
     showError('e3-result', e.message);
   } finally {
@@ -336,6 +400,7 @@ async function runE4() {
               </details>` : ''}
           </div>`).join('')}
       </div>`);
+    saveCurrentTabState();
   } catch (e) {
     showError('e4-result', e.message);
   } finally {
@@ -385,6 +450,7 @@ async function runE5() {
             <div class="mt-2 p-3 bg-gray-50 rounded text-gray-700 whitespace-pre-wrap font-mono text-xs leading-relaxed">${escHtml(data.reasoning)}</div>
           </details>` : ''}
       </div>`);
+    saveCurrentTabState();
   } catch (e) {
     showError('e5-result', e.message);
   } finally {
@@ -434,6 +500,7 @@ async function runE6() {
               </details>` : ''}
           </div>`).join('')}
       </div>`);
+    saveCurrentTabState();
   } catch (e) {
     showError('e6-result', e.message);
   } finally {

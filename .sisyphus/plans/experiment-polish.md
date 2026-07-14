@@ -495,7 +495,7 @@ Critical Path: Task 2 → Task 7 → Task 9 → F1-F4
     Evidence: network tab screenshot
   ```
 
-- [ ] 7. Per-Tab State Persistence
+- [x] 7. Per-Tab State Persistence
 
   **What to do**:
   - In `public/app.js`, add state save/restore for each experiment tab:
