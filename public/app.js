@@ -24,6 +24,8 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 
     // Restore target tab state
     setTimeout(() => restoreTabState(tabName), 10)
+    // Show shared receipt indicator on the target tab
+    setTimeout(() => syncReceiptIndicator(tabName), 15)
   })
 })
 
@@ -103,14 +105,17 @@ async function loadSettings() {
   const apikeyEl = document.getElementById('s-apikey');
   const modelEl = document.getElementById('s-model');
   const visionEl = document.getElementById('s-vision-model');
+  const currencyEl = document.getElementById('s-currency');
 
   const saved = localStorage.getItem('psa_settings');
   if (saved) {
     try {
       const s = JSON.parse(saved);
-      if (s.apiKey) { _apiKey = s.apiKey; apikeyEl.value = s.apiKey; }
+      // Only accept apiKey that looks like a real key (starts with sk-)
+      if (s.apiKey && s.apiKey.startsWith('sk-')) { _apiKey = s.apiKey; apikeyEl.value = s.apiKey; }
       if (s.model) modelEl.value = s.model;
       if (s.visionModel) visionEl.value = s.visionModel;
+      if (s.currency && currencyEl) currencyEl.value = s.currency;
     } catch (_) {}
   }
 
@@ -120,27 +125,34 @@ async function loadSettings() {
     if (cfg.model && !saved) modelEl.value = cfg.model;
     if (cfg.visionModel && !saved) visionEl.value = cfg.visionModel;
     if (cfg.apiKey && !_apiKey) { _apiKey = cfg.apiKey; apikeyEl.value = cfg.apiKey; }
+    if (cfg.currency && currencyEl && !currencyEl.value) currencyEl.value = cfg.currency;
   } catch (_) {}
 }
 
+function isValidApiKey(k) {
+  return k && k.startsWith('sk-') && k.length > 20
+}
+
 function getSettings() {
+  const inputKey = document.getElementById('s-apikey').value
   return {
     model: document.getElementById('s-model').value,
     visionModel: document.getElementById('s-vision-model').value,
-    apiKey: document.getElementById('s-apikey').value || _apiKey,
+    apiKey: isValidApiKey(inputKey) ? inputKey : (isValidApiKey(_apiKey) ? _apiKey : ''),
+    currency: document.getElementById('s-currency')?.value || 'Any',
   };
 }
 
 async function saveSettings() {
-  const { model, visionModel, apiKey } = getSettings();
+  const { model, visionModel, apiKey, currency } = getSettings();
   if (apiKey) _apiKey = apiKey;
 
-  localStorage.setItem('psa_settings', JSON.stringify({ apiKey, model, visionModel }));
+  localStorage.setItem('psa_settings', JSON.stringify({ apiKey, model, visionModel, currency }));
 
   await fetch('/api/settings', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model, visionModel }),
+    body: JSON.stringify({ model, visionModel, currency }),
   });
   showResult('settings-result', '<span class="text-green-600">✓ Settings saved</span>');
 }
@@ -247,9 +259,9 @@ async function getFileData(inputId) {
     reader.readAsDataURL(file)
   })
   const fileData = { base64, mimeType: file.type || 'image/jpeg', filename: file.name }
-  // Store in shared state
   window.APP.state.setReceipt(fileData)
   updateReceiptBar(fileData)
+  syncReceiptIndicator(_currentTab)
   return fileData
 }
 
@@ -262,6 +274,55 @@ function updateReceiptBar(fileData) {
   } else {
     bar.classList.add('hidden')
     name.textContent = ''
+  }
+}
+
+function syncReceiptIndicator(tabName) {
+  const tab = document.getElementById(`tab-${tabName}`)
+  if (!tab) return
+  const fileInput = tab.querySelector('input[type="file"]')
+  if (!fileInput) return
+  let indicator = tab.querySelector('.shared-receipt-indicator')
+  const shared = window.APP.state.getReceipt()
+  if (shared && shared.filename) {
+    if (!indicator) {
+      indicator = document.createElement('div')
+      indicator.className = 'shared-receipt-indicator'
+      fileInput.parentElement.insertBefore(indicator, fileInput.nextSibling)
+    }
+    const isImage = shared.mimeType && shared.mimeType.startsWith('image/')
+    const fullSrc = `data:${shared.mimeType || 'image/jpeg'};base64,${shared.base64}`
+    const thumb = isImage
+      ? `<img src="${fullSrc}" class="shared-receipt-thumb" alt="receipt" onclick="window.APP.showReceiptViewer()" style="cursor:zoom-in">`
+      : '<span class="text-gray-400 text-xs">📄</span>'
+    const sizeStr = shared.base64
+      ? `${(shared.base64.length / 1024).toFixed(0)} KB`
+      : ''
+    indicator.innerHTML = `
+      <div class="flex items-center gap-2 mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
+        ${thumb}
+        <div class="flex-1 min-w-0">
+          <div class="text-xs font-medium text-blue-700">Using shared receipt: ${escHtml(shared.filename)}</div>
+          <div class="text-xs text-gray-400">${sizeStr}${isImage ? ' — click thumbnail to view' : ''}</div>
+        </div>
+        <div class="text-xs text-gray-400">Or select a different file below ↓</div>
+      </div>`
+    fileInput.classList.add('opacity-50')
+  } else {
+    if (indicator) indicator.remove()
+    fileInput.classList.remove('opacity-50')
+  }
+}
+
+function showReceiptViewer() {
+  const shared = window.APP.state.getReceipt()
+  if (!shared || !shared.base64) return
+  const isImage = shared.mimeType && shared.mimeType.startsWith('image/')
+  const fullSrc = `data:${shared.mimeType || 'image/jpeg'};base64,${shared.base64}`
+  if (isImage) {
+    showModal(escHtml(shared.filename || 'Receipt'), `<img src="${fullSrc}" style="max-width:100%; max-height:70vh; display:block; margin:0 auto; border-radius:0.5rem; box-shadow:0 4px 24px rgba(0,0,0,0.15)">`)
+  } else {
+    showModal(escHtml(shared.filename || 'Receipt'), `<div class="text-gray-500 text-sm">PDF preview not available in browser. File size: ${(shared.base64.length / 1024).toFixed(0)} KB</div>`)
   }
 }
 
@@ -365,14 +426,14 @@ async function runE2() {
   const startTime = performance.now();
   try {
     const { base64, mimeType } = await getFileData('e2-file');
-    const { apiKey, visionModel, model } = getSettings();
+const { apiKey, visionModel, model, currency } = getSettings();
     
 
     const res = await fetch('/api/verdict', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        base64, mimeType, apiKey, model, visionModel,
+        base64, mimeType, apiKey, model, visionModel, currency,
         policy: document.getElementById('e2-policy').value,
         phase: parseInt(document.getElementById('e2-phase').value),
         useCot: false,
@@ -413,14 +474,14 @@ async function runE3() {
   const startTime = performance.now();
   try {
     const { base64, mimeType } = await getFileData('e3-file');
-    const { apiKey, visionModel, model } = getSettings();
+const { apiKey, visionModel, model, currency } = getSettings();
     
 
     const res = await fetch('/api/verdict', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        base64, mimeType, apiKey, model, visionModel,
+        base64, mimeType, apiKey, model, visionModel, currency,
         policy: document.getElementById('e3-policy').value,
         phase: parseInt(document.getElementById('e3-phase').value),
         useCot: true,
@@ -466,14 +527,14 @@ async function runE4() {
   const startTime = performance.now();
   try {
     const { base64, mimeType } = await getFileData('e4-file');
-    const { apiKey, visionModel, model } = getSettings();
-    
+    const { apiKey, visionModel, model, currency } = getSettings();
+
 
     const res = await fetch('/api/phase-sensitivity', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        base64, mimeType, apiKey, model, visionModel,
+        base64, mimeType, apiKey, model, visionModel, currency,
         policy: document.getElementById('e4-policy').value,
       }),
     });
@@ -521,14 +582,14 @@ async function runE5() {
   const startTime = performance.now();
   try {
     const { base64, mimeType } = await getFileData('e5-file');
-    const { apiKey, visionModel, model } = getSettings();
-    
+    const { apiKey, visionModel, model, currency } = getSettings();
+
 
     const res = await fetch('/api/verdict', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        base64, mimeType, apiKey, model, visionModel,
+        base64, mimeType, apiKey, model, visionModel, currency,
         policy: document.getElementById('e5-policy').value,
         phase: parseInt(document.getElementById('e5-phase').value),
         useCot: true,
@@ -582,14 +643,14 @@ async function runE6() {
   const startTime = performance.now();
   try {
     const { base64, mimeType } = await getFileData('e6-file');
-    const { apiKey, visionModel, model } = getSettings();
-    
+    const { apiKey, visionModel, model, currency } = getSettings();
+
 
     const res = await fetch('/api/adversarial', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        base64, mimeType, apiKey, model, visionModel,
+        base64, mimeType, apiKey, model, visionModel, currency,
         phase: parseInt(document.getElementById('e6-phase').value),
       }),
     });
@@ -931,6 +992,7 @@ window.APP = window.APP || {}
 window.APP.showExperimentInfo = showExperimentInfo
 window.APP.showModal = showModal
 window.APP.closeModal = closeModal
+window.APP.showReceiptViewer = showReceiptViewer
 
 // ─── Policy Editor ─────────────────────────────────────────────────────────
 
@@ -1207,6 +1269,8 @@ document.getElementById('receipt-clear-btn')?.addEventListener('click', () => {
   window.APP.state.clearReceipt()
   updateReceiptBar(null)
   document.querySelectorAll('input[type="file"]').forEach(el => el.value = '')
+  document.querySelectorAll('.shared-receipt-indicator').forEach(el => el.remove())
+  document.querySelectorAll('input[type="file"]').forEach(el => el.classList.remove('opacity-50'))
 })
 
 loadSettings()
@@ -1216,4 +1280,5 @@ updateTabRunCounts()
 const savedReceipt = window.APP.state.getReceipt()
 if (savedReceipt) {
   updateReceiptBar(savedReceipt)
+  syncReceiptIndicator('e1')
 }

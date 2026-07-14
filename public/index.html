@@ -387,6 +387,16 @@
           </select>
           <p class="text-xs text-gray-400 mt-1">Switch models to compare behavior across E2–E6.</p>
         </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Currency Override</label>
+          <select id="s-currency" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+            <option value="Any">Any (use receipt currency)</option>
+            <option value="AUD">AUD</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+          </select>
+          <p class="text-xs text-gray-400 mt-1">Force a specific currency for verdict prompts, or "Any" to use what the receipt shows.</p>
+        </div>
         <div class="flex gap-3 pt-2">
           <button onclick="saveSettings()"
             class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700">

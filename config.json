@@ -1,5 +1,6 @@
 {
-  "model": "qwen/qwen2.5-72b-instruct",
+  "model": "google/gemini-2.5-flash",
   "visionModel": "google/gemini-2.5-flash",
+  "currency": "Any",
   "test": 1
 }

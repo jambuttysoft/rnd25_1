@@ -234,3 +234,20 @@ body.modal-open {
 .meta-text strong {
   color: #6b7280;
 }
+
+/* ─── Shared receipt indicator ────────────────────────────────────────────── */
+.shared-receipt-indicator {
+  margin-top: 0.5rem;
+}
+.shared-receipt-thumb {
+  width: 3.5rem;
+  height: 3.5rem;
+  object-fit: cover;
+  border-radius: 0.25rem;
+  border: 1px solid #bfdbfe;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.shared-receipt-thumb:hover {
+  border-color: #2563eb;
+  transform: scale(1.08);
+}

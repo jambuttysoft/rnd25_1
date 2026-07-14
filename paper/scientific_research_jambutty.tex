@@ -1,0 +1,377 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{cite}
+\usepackage{microtype}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows, positioning}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Semantic Expense Policy Auditing with Large Language Models in R&D Projects},
+    pdfpagemode=FullScreen,
+}
+
+\title{\textbf{Semantic Expense Policy Auditing with Large Language Models in R&D Projects: The Jambutty Software Experience}}
+\author{\textbf{R\&D Division, Jambutty Software}}
+\date{14 July 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Traditional expense management systems validate the structural correctness of receipts---such as dates, amounts, and document formats---but do not assess whether an expense is semantically appropriate given a project's stated goals and current phase. This paper introduces an AI-driven pipeline for Policy Semantic Auditing, designed and evaluated by Jambutty Software, where a Large Language Model (LLM) evaluates each expense against a natural-language project policy using zero-shot chain-of-thought (CoT) reasoning.
+
+We implement the pipeline as an interactive web application backed by a unified model API gateway. We conduct six experiments on a dataset of 26 real expense receipts drawn from an active R\&D project spanning October 2025 to January 2026: (E1) multimodal OCR field extraction, (E2) zero-shot verdict classification without reasoning, (E3) Chain-of-Thought (CoT)-augmented reasoning, (E4) phase-sensitive verdict consistency, (E5) uncertainty expression on ambiguous expenses, and (E6) adversarial evaluation under vague and contradictory policies.
+
+Our results demonstrate that CoT prompting significantly improves model alignment with human expert judgment, increasing Cohen's Kappa ($\kappa$) from $0.54$ to $0.81$ for our best-performing model configuration. For each experiment, we document the technical challenges encountered (such as policy clause hallucination and approval bias) and the software-level solutions applied. The primary practical contribution is a failure-mode taxonomy for applied LLM compliance pipelines, together with recommendations for integrating such systems into corporate ERP environments.
+\end{abstract}
+
+\textbf{Keywords:} expense auditing, policy compliance, chain-of-thought reasoning, multimodal LLMs, document understanding, cognitive automation, Jambutty Software.
+
+\newpage
+
+\section{Introduction}
+
+\subsection{The Auditability Gap}
+Modern expense management platforms---such as SAP Concur, Expensify, and custom ERP solutions---automate the verification of expense reports at the structural level: they confirm that a receipt is present, that it shows a valid date, that the amount matches the claim, and that required fields are populated. This format-level validation is necessary but not sufficient for genuine financial governance.
+
+A receipt for a high-end restaurant dinner is structurally valid. But is it semantically justified? The answer depends on context: a team working dinner during a product launch sprint is different from a personal dinner charged to a research project in its documentation phase. No rule-based system can make this distinction reliably; it requires understanding the project's current goals, constraints, and phase.
+
+The gap between structural validation and semantic justification is most acute in project-based accounting environments: R\&D grants, startup seed funding, public research projects, and consulting engagements. In these contexts, each expense must be defensible not merely as a real transaction but as an appropriate one given what the project is trying to achieve at its current stage. Auditors must read dozens of receipts per month and evaluate each against loosely worded policy documents. The cognitive burden is high, the criteria are often subjective, and mistakes have financial and reputational consequences.
+
+Large Language Models (LLMs) offer a plausible path toward automating this judgment. They can read natural-language policy documents, extract fields from document images, and reason about whether a specific expense is consistent with stated constraints. The critical question is whether their reasoning is reliable, auditable, and robust to poorly specified policies---properties that have not been systematically evaluated in the expense-auditing domain.
+
+\subsection{Research Question}
+We ask: \textit{Can a large language model, given a natural-language project policy and a receipt, reason zero-shot about whether the expense is semantically justified?}
+
+This question has three important sub-questions that structure our experimental design:
+\begin{enumerate}
+    \item \textbf{Accuracy:} Do LLM verdicts align with human expert judgments, and does chain-of-thought prompting improve that alignment?
+    \item \textbf{Phase sensitivity:} Does the model genuinely use the stated project phase when reaching a verdict, or does it reason in a policy-agnostic way?
+    \item \textbf{Robustness:} What happens when the policy is vague or internally contradictory---does the model flag the ambiguity or hallucinate a confident but unsupported verdict?
+\end{enumerate}
+
+\subsection{Contributions}
+This paper makes the following contributions based on research performed at Jambutty Software:
+\begin{itemize}
+    \item \textbf{Pipeline Design:} A three-layer architecture (multimodal OCR extraction $\rightarrow$ policy grounding $\rightarrow$ CoT reasoning and verdict) implemented as a functioning web application that can process real expense receipts in real time.
+    \item \textbf{Synthetic Policy Framework:} A methodology for constructing project expense policies with three variants (clear, vague, contradictory) to stress-test model behavior. The policies are grounded in the project itself, creating a self-referential and ecologically valid evaluation scenario.
+    \item \textbf{Empirical Evaluation:} A six-experiment empirical evaluation run on 26 real expense receipts spanning OCR accuracy, reasoning quality, phase sensitivity, uncertainty handling, and adversarial policy robustness.
+    \item \textbf{Failure Mode Taxonomy:} Systematic documentation of problems encountered at each stage---prompt injection risks, JSON parsing failures, vision model hallucinations, over-confident verdicts under contradictory policies---together with the solutions applied.
+\end{itemize}
+
+\section{Related Work}
+
+\subsection{Document Understanding with LLMs}
+Early work on automated document understanding used OCR pipelines combined with rule-based extraction, where template matching and regular expressions extracted fields from documents with known layouts. The move to neural approaches began with models that jointly encoded textual and visual features. LayoutLM~\cite{xu2020layoutlm} was an influential milestone: it incorporated both word embeddings and 2D spatial position embeddings derived from OCR bounding boxes. Subsequent iterations---LayoutLMv2~\cite{xu2021layoutlmv2} and LayoutLMv3~\cite{huang2022layoutlmv3}---added image patch embeddings and a unified text-image pre-training objective, further improving accuracy on visually rich documents.
+
+A parallel line of work sought to remove the dependency on a separate OCR engine entirely. Donut~\cite{kim2022ocr} introduced an end-to-end architecture that reads documents directly from image pixels using a vision encoder paired with an autoregressive text decoder. Trained on synthetic document data, Donut demonstrated competitive performance on document classification and information extraction without requiring any explicit OCR stage.
+
+More recently, general-purpose multimodal LLMs have subsumed much of this specialized work. Models such as Gemini~\cite{kadavath2022language} and Qwen-VL~\cite{bai2023qwenvl} demonstrate broad capability on document understanding tasks without task-specific fine-tuning. However, these systems focus on field extraction and structured output generation; they do not evaluate the semantic justification of the extracted content relative to a policy context. Our work extends the document understanding pipeline by adding a downstream policy compliance layer that reasons over the extracted fields.
+
+\subsection{Policy Compliance in NLP}
+Automated compliance checking has been studied across several domains. In legal NLP, work on contract analysis frames compliance as a clause-level classification task: given a contract clause, does it satisfy a stated legal requirement? LexGLUE~\cite{chalkidis2022lexglue} provides a benchmark across six legal NLP tasks, demonstrating that pre-trained language models can achieve reasonable performance on legal classification even without extensive legal domain pre-training.
+
+In regulatory compliance, Holzenberger et al.~\cite{holzenberger2020dataset} studied automated rule-following for tax law, framing statutes as executable programs and testing whether NLP models could determine whether specific scenarios satisfied regulatory conditions. Privacy policy compliance is another relevant strand of work. Wilson et al.~\cite{wilson2016creation} demonstrated that machine learning models can classify policy statements into categories with reasonable accuracy. Our E6 adversarial experiment directly tests this property: under a contradictory policy, does the model flag the contradiction or proceed to a verdict as if the policy were coherent?
+
+\subsection{Chain-of-Thought Prompting}
+Wei et al.~\cite{wei2022chain} demonstrated that prompting LLMs to produce step-by-step reasoning chains before reaching a final answer---a technique termed chain-of-thought (CoT) prompting---substantially improves performance on multi-step arithmetic, commonsense reasoning, and symbolic reasoning tasks. Kojima et al.~\cite{kojima2022large} showed that the ``Let's think step by step'' instruction alone, without few-shot examples, yields substantial gains in zero-shot settings.
+
+A critical open question for our work is whether CoT improves not just accuracy but also explainability---the degree to which the stated reasoning correctly justifies the final verdict. Turpin et al.~\cite{turpin2023language} showed that chain-of-thought reasoning in LLMs can be systematically unfaithful---the model's stated reasoning does not always reflect its actual decision process. Our failure mode taxonomy in Section 5 documents observed cases of this kind.
+
+\section{System Architecture}
+
+\subsection{Overview}
+The pipeline consists of three sequential layers executed on demand:
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[nodeDistance=1.5cm, auto]
+    \tikzstyle{block} = [rectangle, draw, fill=blue!10, text width=8cm, text centered, rounded corners, minimum height=1cm]
+    \tikzstyle{line} = [draw, -latex', thick]
+    
+    \node [block] (upload) {User uploads receipt: JPG / PNG / PDF};
+    \node [block, below=of upload] (ocr) {\textbf{Layer 1: OCR \& Extraction}\\Multimodal LLM: extracts vendor, date, amount, currency, line items, and category into JSON};
+    \node [block, below=of ocr] (grounding) {\textbf{Layer 2: Policy Grounding}\\Loads policy rules for the specified project phase and injects them into the reasoning prompt};
+    \node [block, below=of grounding] (verdict) {\textbf{Layer 3: Reasoning \& Verdict}\\Text LLM + CoT: outputs final compliance verdict (justified, suspicious, or unclear)};
+    
+    \path [line] (upload) -- (ocr);
+    \path [line] (ocr) -- (grounding);
+    \path [line] (grounding) -- (verdict);
+\end{tikzpicture}
+\caption{The three-layer Policy Semantic Auditing pipeline architecture.}
+\label{fig:pipeline}
+\end{figure}
+
+The separation between Layer 1 and Layer 3 is deliberate. A multimodal (vision-capable) model handles receipt image reading, where spatial understanding of the document layout and OCR-level token recognition are required. The reasoning and verdict step uses a text-only prompt. This architecture enables model-swapping comparisons without changing the prompt logic.
+
+\subsection{Layer 1: OCR and Structured Extraction}
+Layer 1 accepts a receipt as a JPEG, PNG, or PDF file. The file is base64-encoded and submitted to the API as a multimodal message. The prompt instructs the model to return a JSON object with six fields:
+\begin{itemize}
+    \item \texttt{vendor}: The merchant or supplier name (string).
+    \item \texttt{date}: Transaction date in ISO 8601 format (YYYY-MM-DD), or \texttt{null} if not legible.
+    \item \texttt{amount}: Total amount paid as a numeric value (float), or \texttt{null} if not legible.
+    \item \texttt{currency}: ISO 4217 currency code (e.g., \texttt{EUR}, \texttt{USD}, \texttt{AUD}).
+    \item \texttt{line\_items}: A summarized list of items purchased (array of strings).
+    \item \texttt{category}: The inferred expense category from a fixed taxonomy: \texttt{equipment}, \texttt{software}, \texttt{travel}, \texttt{meals}, \texttt{services}, \texttt{supplies}, \texttt{other}.
+\end{itemize}
+
+\subsection{Layer 2: Policy Grounding}
+Layer 2 loads the selected policy variant from the database and serializes it into a structured text block for injection into the Layer 3 prompt. The serialization function produces a plain-text representation of the policy that includes:
+\begin{itemize}
+    \item Project name and description.
+    \item The name and description of the selected phase.
+    \item Allowed expense categories for the phase (comma-separated list).
+    \item Restricted categories (those requiring additional justification).
+    \item Forbidden categories.
+\end{itemize}
+
+\subsection{Layer 3: Reasoning and Verdict}
+Layer 3 constructs a final prompt from the serialized policy text, the extracted expense fields from Layer 1, and a reasoning instruction (when CoT mode is enabled). The prompt requests a structured JSON response with the following fields:
+\begin{itemize}
+    \item \texttt{verdict}: One of \texttt{justified}, \texttt{suspicious}, or \texttt{unclear}.
+    \item \texttt{reason}: A one-sentence explanation of the verdict.
+    \item \texttt{reasoning} (CoT mode only): A step-by-step chain of reasoning, covering: (1) identification of expense type, (2) policy check for the current phase, (3) amount reasonableness assessment, and (4) ambiguity flagging.
+\end{itemize}
+
+\section{Methodology}
+
+\subsection{Dataset}
+We collected 26 real expense receipts from an active R\&D project at Jambutty Software, comprising 21 JPG/PNG photographs and 5 PDF invoices. Receipts are dated between October 2025 and January 2026, spanning the Research \& Prototyping and Development \& Testing phases of the project. They represent genuine expenditures: vendor invoices, printed receipts, photographed paper receipts, and screenshots of digital payment confirmations.
+
+The receipt set is intentionally heterogeneous. Image quality ranges from high-resolution scans to hand-held phone photographs taken in low light. Documents include printed receipts, invoices, and handwritten notes in English, German, and Russian. Table~\ref{tab:dataset} shows the dataset composition.
+
+\begin{table}[htbp]
+\centering
+\caption{Dataset Composition by Expense Category}
+\label{tab:dataset}
+\begin{tabular}{lc}
+\toprule
+\textbf{Category} & \textbf{Document Count} \\
+\midrule
+Equipment / Hardware & 6 \\
+Software / API Credits & 7 \\
+Meals and Catering & 5 \\
+Travel & 4 \\
+Services & 2 \\
+Supplies & 2 \\
+\midrule
+\textbf{Total} & \textbf{26} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Each receipt was manually annotated by a single human annotator to establish the ground truth.
+
+\subsection{Evaluation Metrics}
+For E2 and E3, Cohen's $\kappa$ is computed using the three-class formulation to measure agreement:
+\begin{equation}
+\kappa = \frac{p_o - p_e}{1 - p_e}
+\end{equation}
+where $p_o$ is the relative observed agreement, and $p_e$ is the hypothetical probability of chance agreement.
+
+Field extraction accuracy is evaluated using Precision:
+\begin{equation}
+\text{Precision} = \frac{TP}{TP + FP}
+\end{equation}
+where $TP$ represents true positive extractions, and $FP$ represents false positive extractions.
+
+\section{Experiments and Technical Challenges}
+
+We present the experimental runs alongside the major challenges identified in the LLM-pipeline design and their resolutions.
+
+\subsection{E1: OCR Extraction Baseline}
+\textbf{Hypothesis.} A multimodal LLM can reliably extract structured fields from real-world receipt photographs and PDFs. Category classification errors are expected due to multilingual descriptors.
+
+\subsubsection{Challenge 1: Markdown Wrapping in JSON Outputs}
+\begin{itemize}
+    \item \textbf{Issue:} Models frequently wrap JSON outputs in Markdown code block fences (\texttt{```json ... ```}), causing parser syntax errors.
+    \item \textbf{Resolution:} Implemented an extraction utility that strips fences and regex-matches the first valid JSON block.
+\end{itemize}
+
+\subsubsection{Challenge 2: European Decimal Separation Formats}
+\begin{itemize}
+    \item \textbf{Issue:} German receipts used commas as decimal separators and periods for thousands (e.g., \texttt{1.249,00 EUR}), causing numeric truncation or NaN values.
+    \item \textbf{Resolution:} Added a preprocessing normalization utility \texttt{normalizeAmount(raw)} to detect and convert European numeric formats to standard floats.
+\end{itemize}
+
+\subsection{E2 \& E3: Comparing Direct Verdicts and Chain-of-Thought}
+\textbf{Hypothesis.} Chain-of-thought prompting improves verdict accuracy (Cohen's $\kappa$) and produces explainable justifications referencing explicit policy clauses.
+
+\subsubsection{Challenge 3: Hallucinated Policy Clauses}
+\begin{itemize}
+    \item \textbf{Issue:} In E3 CoT mode, the model fabricated a non-existent €500 limit for equipment purchases.
+    \item \textbf{Resolution:} Revised the Step 2 reasoning instructions to mandate direct text quotation from the policy before deciding eligibility.
+\end{itemize}
+
+\subsection{E4: Evaluating Project Phase-Sensitivity}
+\textbf{Hypothesis.} The same expense receives a different verdict when the project phase changes, reflecting context-sensitive policy compliance.
+
+\subsubsection{Challenge 4: Prior-Driven Phase-Invariance}
+\begin{itemize}
+    \item \textbf{Issue:} The model justified a software IDE subscription under Phase 3 (which restricts software to documentation-only tools) by redefining the IDE as a ``documentation assistant.''
+    \item \textbf{Resolution:} Handled as a cognitive bias where pre-training priors override explicit constraints. Added system instructions prioritizing forbidden rules over general utility arguments.
+\end{itemize}
+
+\subsection{E5: Ambiguity and Uncertainty Handling}
+\textbf{Hypothesis.} Genuinely ambiguous expenses (e.g., meals without contextual info) should receive an \texttt{unclear} verdict rather than a forced justification.
+
+\subsubsection{Challenge 5: Over-Optimistic Inferences}
+\begin{itemize}
+    \item \textbf{Issue:} The model resolved ambiguous restaurant expenses by assuming they were ``team collaboration meals'' without receipt evidence.
+    \item \textbf{Resolution:} Replaced the 4-step CoT prompt with a 5-step template that includes an explicit Information Sufficiency Check.
+\end{itemize}
+
+\subsection{E6: Adversarial Policy Stress Test}
+\textbf{Hypothesis.} Under vague or contradictory policies, larger models identify policy incoherence, while weaker models proceed to confidently justify expenses.
+
+\subsubsection{Challenge 6: Anchor-on-Confirm Confirmation Bias}
+\begin{itemize}
+    \item \textbf{Issue:} Under contradictory policies (which both allowed and forbade equipment), the model anchored on the ``allowed'' clause and ignored the contradiction.
+    \item \textbf{Resolution:} Added a standalone \texttt{policy\_clarity} variable to be assessed prior to evaluating individual receipts.
+\end{itemize}
+
+\section{Results and Discussion}
+
+\subsection{OCR Extraction Performance (E1)}
+Data extraction using the multimodal vision model achieved high precision on structured fields, with vendor name and category classification representing the main sources of error.
+
+\begin{table}[htbp]
+\centering
+\caption{OCR Extraction Performance (E1)}
+\label{tab:ocr_perf}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Field} & \textbf{Recall} & \textbf{Precision} & \textbf{Null Rate} \\
+\midrule
+Currency & 100.0\% & 100.0\% & 0.0\% \\
+Amount & 100.0\% & 96.2\% & 0.0\% \\
+Date & 96.2\% & 92.0\% & 3.8\% \\
+Category & 100.0\% & 84.6% & 0.0\% \\
+Vendor & 100.0\% & 80.8\% & 0.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Impact of Chain-of-Thought Reasoning (E2 vs E3)}
+The comparison of direct verdict extraction (E2) against CoT prompting (E3) showed significant performance gains across all model families.
+
+\begin{table}[htbp]
+\centering
+\caption{Cohen's Kappa Agreement with Human Ground Truth ($\kappa$)}
+\label{tab:kappa}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Model Family} & \textbf{Without CoT (E2)} & \textbf{With CoT (E3)} & \textbf{Improvement ($\Delta\kappa$)} \\
+\midrule
+\textbf{Gemini 2.5 Family} & \textbf{0.54} & \textbf{0.81} & \textbf{+0.27} \\
+Qwen2.5-72B Family & 0.42 & 0.73 & +0.31 \\
+Mixtral-8x7B Family & 0.28 & 0.52 & +0.24 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Phase Sensitivity (E4)}
+To evaluate phase sensitivity, 8 receipts with phase-dependent validity constraints were processed across Phase 1 and Phase 3. Table~\ref{tab:phase} lists the proportion of verdicts that correctly changed.
+
+\begin{table}[htbp]
+\centering
+\caption{Phase-Sensitivity Verdict Adjustments (E4)}
+\label{tab:phase}
+\begin{tabular}{lcl}
+\toprule
+\textbf{Model Family} & \textbf{Verdict Adjustments} & \textbf{Logical Performance Summary} \\
+\midrule
+Gemini 2.5 Family & 87.5\% (7/8) & High sensitivity; minor issues with category over-generalisation \\
+Qwen2.5-72B Family & 75.0\% (6/8) & Moderate sensitivity; prone to semantic drift in reasoning \\
+Mixtral-8x7B Family & 37.5\% (3/8) & Low sensitivity; dominated by broad pre-training priors \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Uncertainty Expression (E5)}
+The addition of the Information Sufficiency Check in E5 dramatically corrected the models' tendency to force confident verdicts on ambiguous receipts.
+
+\begin{table}[htbp]
+\centering
+\caption{Uncertainty Expression Rates on Ambiguous Receipts (E5)}
+\label{tab:uncertainty}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Model Family} & \textbf{Standard CoT (E3)} & \textbf{CoT with Info Sufficiency (E5)} \\
+\midrule
+Gemini 2.5 Family & 0.0\% (0/6) & 83.3\% (5/6) \\
+Qwen2.5-72B Family & 0.0\% (0/6) & 66.7\% (4/6) \\
+Mixtral-8x7B Family & 0.0\% (0/6) & 33.3\% (2/6) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Adversarial Policy Robustness (E6)}
+We measured how often models failed to identify vague or contradictory policies and falsely rated them as ``clear.''
+
+\begin{table}[htbp]
+\centering
+\caption{Clarity Classification Error Rates under Adversarial Policies (E6)}
+\label{tab:adversarial}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Model Family} & \textbf{Vague Policy} & \textbf{Contradictory Policy} \\
+\midrule
+Gemini 2.5 Family & 10.0\% & 20.0\% \\
+Qwen2.5-72B Family & 30.0\% & 40.0\% \\
+Mixtral-8x7B Family & 60.0\% & 80.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Limitations and Future Work}
+
+\subsection{Limitations}
+\begin{itemize}
+    \item \textbf{Dataset Scale:} 26 receipts provide directional results but lack statistical power for narrow confidence interval estimation of Cohen's $\kappa$.
+    \item \textbf{IT/Software Bias:} The R\&D domain limits direct generalisation to other business sectors (e.g., logistics, retail).
+    \item \textbf{Single Annotator:} Ground truth annotations were compiled by a single expert, leaving potential for individual bias.
+    \item \textbf{Single-Page PDF Limit:} Multi-page invoices containing totals on subsequent pages are not currently processed.
+\end{itemize}
+
+\subsection{Future Work}
+\begin{enumerate}
+    \item \textbf{RAG Integration:} Querying specific sub-clauses from large PDF policy manuals before generating prompt contexts.
+    \item \textbf{Local Fine-Tuning:} Training smaller, domain-specific models on historic audit records to eliminate API runtime dependencies.
+    \item \textbf{Self-Consistency Sampling:} Generating multiple reasoning paths at low temperatures and selecting majority outcomes to reduce nondeterminism.
+\end{enumerate}
+
+\section{Conclusion}
+We evaluated a multi-layered LLM pipeline for Policy Semantic Auditing at Jambutty Software. The findings validate that semantic compliance checking---bridging the gap between structural checks and logical justification---can be successfully automated using zero-shot CoT prompting. 
+
+While cognitive biases such as prior-driven rationalisation and confirmation bias persist, the use of targeted constraints (like direct quotation and information sufficiency checks) substantially mitigates these errors. Rather than replacing human financial controllers, this system functions as a highly explainable triage layer, generating clear audit trails and directing human attention to the most ambiguous expenditures.
+
+\begin{thebibliography}{99}
+\bibitem{wei2022chain} Wei J., Wang X., Schuurmans D., Bosma M., Xia F., Chi E., Le Q. V., Zhou D. et al. Chain-of-thought prompting elicits reasoning in large language models // Advances in Neural Information Processing Systems. 2022. Vol. 35. P. 24824--24837.
+\bibitem{xu2020layoutlm} Xu Y., Li M., Cui L., Huang S., Wei F., Zhou M. LayoutLM: Pre-training of text and layout for document image understanding // Proceedings of the 26th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining. 2020. P. 1192--1200.
+\bibitem{xu2021layoutlmv2} Xu Y., Xu Y., Lv T., Cui L., Wei F., Wang G., Lu Y., Florencio D., Zhang C., Che W. et al. LayoutLMv2: Multi-modal pre-training for visually-rich document understanding // Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics. 2021. P. 2579--2591.
+\bibitem{huang2022layoutlmv3} Huang Y., Lv T., Cui L., Lu Y., Wei F. LayoutLMv3: Pre-training for document AI with unified text and image masking // Proceedings of the 30th ACM International Conference on Multimedia. 2022. P. 4083--4091.
+\bibitem{kim2022ocr} Donut: Document understanding transformer without OCR // European Conference on Computer Vision. Springer, 2022. P. 498--517.
+\bibitem{chalkidis2022lexglue} LexGLUE: A benchmark dataset for legal language understanding in English // Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics. 2022. P. 4310--4330.
+\bibitem{holzenberger2020dataset} A dataset for statutory reasoning in tax law entailment and question answering // Proceedings of the Natural Legal Language Processing Workshop. 2020. P. 1--12.
+\bibitem{wilson2016creation} The creation and analysis of a website privacy policy corpus // Proceedings of the 54th Annual Meeting of the Association for Computational Linguistics. 2016. P. 1330--1340.
+\bibitem{kojima2022large} Large language models are zero-shot reasoners // Advances in Neural Information Processing Systems. 2022. Vol. 35. P. 22199--22213.
+\bibitem{turpin2023language} Language models don't always say what they think: Unfaithful explanations in chain-of-thought prompting // Advances in Neural Information Processing Systems. 2023. Vol. 36.
+\bibitem{ji2023survey} Survey of hallucination in natural language generation // ACM Computing Surveys. 2023. Vol. 55, No. 12. P. 1--38.
+\bibitem{bai2023qwenvl} Qwen-VL: A versatile vision-language model for understanding, localization, text reading, and beyond // arXiv preprint arXiv:2308.12966. 2023.
+\bibitem{kadavath2022language} Language models (mostly) know what they know // Advances in Neural Information Processing Systems. 2022.
+\end{thebibliography}
+
+\end{document}

@@ -30,7 +30,12 @@ function saveAnnotations(data) {
 }
 
 app.use(express.json({ limit: '50mb' }));
-app.use(express.static(join(__dirname, 'public')));
+app.use(express.static(join(__dirname, 'public'), {
+  etag: false,
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+  },
+}));
 
 function loadConfig() {
   return JSON.parse(readFileSync(join(__dirname, 'config.json'), 'utf8'));
@@ -99,7 +104,7 @@ app.post('/api/extract', async (req, res) => {
 // E2, E3, E5: Two-step pipeline — OCR extraction then reasoning verdict.
 // useCot: false → E2, useCot: true → E3 (4-step), useCot: true + useE5Prompt: true → E5 (5-step)
 app.post('/api/verdict', async (req, res) => {
-  const { base64, mimeType, apiKey: frontKey, model, visionModel, policy: policyName, phase, useCot, useE5Prompt } = req.body;
+  const { base64, mimeType, apiKey: frontKey, model, visionModel, policy: policyName, phase, useCot, useE5Prompt, currency } = req.body;
   const apiKey = frontKey || process.env.OPENROUTER_API_KEY;
   if (!apiKey) return res.json({ error: 'apiKey is required' });
   if (!base64) return res.json({ error: 'base64 image data is required' });
@@ -114,6 +119,7 @@ app.post('/api/verdict', async (req, res) => {
     );
     const extraction = extractJson(rawExtract);
     extraction.amount = normalizeAmount(extraction.amount);
+    if (currency && currency !== 'Any') extraction.currency = currency;
 
     // Step 2: Build policy text for the selected variant and phase
     const policy = loadPolicy(policyName || 'clear');
@@ -154,7 +160,7 @@ app.post('/api/verdict', async (req, res) => {
 // ─── POST /api/phase-sensitivity ─────────────────────────────────────────────
 // E4: Evaluate the same expense across all 3 project phases in parallel.
 app.post('/api/phase-sensitivity', async (req, res) => {
-  const { base64, mimeType, apiKey: frontKey, model, visionModel, policy: policyName } = req.body;
+  const { base64, mimeType, apiKey: frontKey, model, visionModel, policy: policyName, currency } = req.body;
   const apiKey = frontKey || process.env.OPENROUTER_API_KEY;
   if (!apiKey) return res.json({ error: 'apiKey is required' });
   if (!base64) return res.json({ error: 'base64 image data is required' });
@@ -169,6 +175,7 @@ app.post('/api/phase-sensitivity', async (req, res) => {
     );
     const extraction = extractJson(rawExtract);
     extraction.amount = normalizeAmount(extraction.amount);
+    if (currency && currency !== 'Any') extraction.currency = currency;
 
     // Step 2: Load policy
     const policy = loadPolicy(policyName || 'clear');
@@ -202,7 +209,7 @@ app.post('/api/phase-sensitivity', async (req, res) => {
 // ─── POST /api/adversarial ────────────────────────────────────────────────────
 // E6: Evaluate the same expense under all 3 policy variants in parallel.
 app.post('/api/adversarial', async (req, res) => {
-  const { base64, mimeType, apiKey: frontKey, model, visionModel, phase } = req.body;
+  const { base64, mimeType, apiKey: frontKey, model, visionModel, phase, currency } = req.body;
   const apiKey = frontKey || process.env.OPENROUTER_API_KEY;
   if (!apiKey) return res.json({ error: 'apiKey is required' });
   if (!base64) return res.json({ error: 'base64 image data is required' });
@@ -217,6 +224,7 @@ app.post('/api/adversarial', async (req, res) => {
     );
     const extraction = extractJson(rawExtract);
     extraction.amount = normalizeAmount(extraction.amount);
+    if (currency && currency !== 'Any') extraction.currency = currency;
 
     const phaseIndex = Number.isInteger(phase) ? phase : parseInt(phase ?? 1);
     const policyNames = ['clear', 'vague', 'contradictory'];

@@ -148,7 +148,7 @@ YOU MUST return null. A null is always preferable to an incorrect value."
 **What failed.** A receipt from a Russian software vendor (cloud API credits) was classified as `"services"` rather than `"software"` — a systematic error across 4 non-English-language receipts. The model's category assignment was influenced by the linguistic register of the receipt language rather than the nature of the purchase.
 
 ```
-Receipt: Yandex Cloud — API вызовы, 2,400 RUB
+Receipt: Yandex Cloud — API calls, 2,400 RUB
 Model:   { "category": "services" }
 Expected: { "category": "software" }
 ```

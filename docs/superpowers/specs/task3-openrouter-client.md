@@ -425,7 +425,7 @@ import('./lib/prompts.js').then(({ PROMPTS, fillPrompt }) => {
 
   const filled = fillPrompt(PROMPTS.verdictNoCot, {
     policy_text: 'test policy',
-    vendor: 'Acme Corp',
+    vendor: 'Jambutty Software',
     date: '2025-10-01',
     amount: 100,
     currency: 'EUR',
@@ -433,7 +433,7 @@ import('./lib/prompts.js').then(({ PROMPTS, fillPrompt }) => {
     line_items: 'monitor',
   });
   console.assert(!filled.includes('{vendor}'), 'placeholders replaced');
-  console.assert(filled.includes('Acme Corp'), 'value inserted');
+  console.assert(filled.includes('Jambutty Software'), 'value inserted');
   console.log('All assertions passed');
 });
 "

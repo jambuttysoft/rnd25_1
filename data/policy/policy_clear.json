@@ -1,7 +1,7 @@
 {
   "policy_name": "clear",
-  "project_name": "Acme Corp — R&D Division",
-  "description": "Expense policy for Acme Corp R&D division. Covers all expenses incurred during research, development, prototyping, and team operations. All expenses must be substantiated with receipts and aligned with the current project phase.",
+  "project_name": "Jambutty Software — R&D Division",
+  "description": "Expense policy for Jambutty Software R&D division. Covers all expenses incurred during research, development, prototyping, and team operations. All expenses must be substantiated with receipts and aligned with the current project phase.",
   "phases": [
     {
       "name": "Phase 1: Research & Prototyping",

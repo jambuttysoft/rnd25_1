@@ -1,10 +1,11 @@
 # Design Spec: AI-Driven Policy Semantic Audit
 
 **Date:** 2026-06-21  
-**Status:** Approved  
+**Status:** Approved — realized in `paper/` (9-section scientific manuscript)  
 **Output format:** Hybrid scientific article + technical R&D report  
 **Language:** English  
-**Target length:** 15–20 pages
+**Target length:** 15–20 pages  
+**Realized as:** `paper/00_abstract.md` through `paper/08_conclusion.md`
 
 ---
 
