@@ -807,19 +807,19 @@ Critical Path: Task 2 → Task 7 → Task 9 → F1-F4
 
 ## Final Verification Wave
 
-- [ ] F1. **Plan Compliance Audit** — `oracle`
+- [x] F1. **Plan Compliance Audit** — `oracle`
   Read the plan end-to-end. Verify each Must Have has implementation. Check each Must NOT Have is absent. Check evidence files in `.sisyphus/evidence/`.
   Output: `Must Have [N/N] | Must NOT Have [N/N] | Tasks [N/N] | VERDICT`
 
-- [ ] F2. **Code Quality Review** — `unspecified-high`
+- [x] F2. **Code Quality Review** — `unspecified-high`
   Run `node --check server.js && node --check lib/*.js`. Review for: console.log in prod, unused imports, HTML escaping issues.
   Output: `Parse [PASS/FAIL] | Files [N clean] | VERDICT`
 
-- [ ] F3. **Real Manual QA** — `unspecified-high` (+ `playwright-cli`)
+- [x] F3. **Real Manual QA** — `unspecified-high` (+ `playwright-cli`)
   Start from clean sessionStorage. Execute EVERY QA scenario from every task. Test cross-task integration. Save screenshots to `.sisyphus/evidence/`.
   Output: `Scenarios [N/N pass] | Integration [N/N] | VERDICT`
 
-- [ ] F4. **Scope Fidelity Check** — `deep`
+- [x] F4. **Scope Fidelity Check** — `deep`
   For each task: read "What to do", read actual diff. Verify 1:1 — everything built, nothing beyond scope.
   Output: `Tasks [N/N compliant] | Creep [CLEAN] | VERDICT`
 
