@@ -1,0 +1,93 @@
+- generic [ref=f1e1]:
+  - banner [ref=f1e2]:
+    - heading "Policy Semantic Audit" [level=1] [ref=f1e3]
+    - paragraph [ref=f1e4]: AI-driven expense justification research platform
+  - navigation [ref=f1e5]:
+    - 'button "E1: OCR" [ref=f1e6] [cursor=pointer]'
+    - 'button "E2: No-CoT" [ref=f1e7] [cursor=pointer]'
+    - 'button "E3: CoT" [ref=f1e8] [cursor=pointer]'
+    - 'button "E4: Phase" [ref=f1e9] [cursor=pointer]'
+    - 'button "E5: Ambiguity" [ref=f1e10] [cursor=pointer]'
+    - 'button "E6: Adversarial" [ref=f1e11] [cursor=pointer]'
+    - button "Annotate" [ref=f1e12] [cursor=pointer]
+    - button "Policy Editor" [active] [ref=f1e13] [cursor=pointer]
+    - button "⚙ Settings" [ref=f1e14] [cursor=pointer]
+  - main [ref=f1e15]:
+    - generic [ref=f1e28]:
+      - heading "Policy Editor" [level=2] [ref=f1e29]
+      - paragraph [ref=f1e30]: Edit the expense policies used by all experiments. Changes take effect immediately.
+      - generic [ref=f1e31]:
+        - generic [ref=f1e32]:
+          - generic [ref=f1e33]: Policy
+          - combobox [ref=f1e34]:
+            - option "Clear policy" [selected]
+            - option "Vague policy"
+            - option "Contradictory policy"
+        - generic [ref=f1e35]:
+          - generic [ref=f1e36]: Project Name
+          - textbox [ref=f1e37]: Test
+        - generic [ref=f1e38]:
+          - generic [ref=f1e39]: Description
+          - textbox [ref=f1e40]: Test
+        - generic [ref=f1e41]:
+          - generic [ref=f1e111]:
+            - heading "Phase 1" [level=4] [ref=f1e112]
+            - generic [ref=f1e113]:
+              - generic [ref=f1e114]:
+                - generic [ref=f1e115]: Phase Name
+                - textbox [ref=f1e116]: P1
+              - generic [ref=f1e117]:
+                - generic [ref=f1e118]: Description
+                - textbox [ref=f1e119]: d1
+              - generic [ref=f1e120]:
+                - generic [ref=f1e121]: allowed
+                - generic [ref=f1e122]:
+                  - generic [ref=f1e123]:
+                    - generic [ref=f1e124]: x
+                    - button "×" [ref=f1e125] [cursor=pointer]
+                  - textbox "Add item..." [ref=f1e126]
+              - generic [ref=f1e127]:
+                - generic [ref=f1e128]: restricted
+                - textbox "Add item..." [ref=f1e130]
+              - generic [ref=f1e131]:
+                - generic [ref=f1e132]: forbidden
+                - textbox "Add item..." [ref=f1e134]
+          - generic [ref=f1e135]:
+            - heading "Phase 2" [level=4] [ref=f1e136]
+            - generic [ref=f1e137]:
+              - generic [ref=f1e138]:
+                - generic [ref=f1e139]: Phase Name
+                - textbox [ref=f1e140]: P2
+              - generic [ref=f1e141]:
+                - generic [ref=f1e142]: Description
+                - textbox [ref=f1e143]: d2
+              - generic [ref=f1e144]:
+                - generic [ref=f1e145]: allowed
+                - textbox "Add item..." [ref=f1e147]
+              - generic [ref=f1e148]:
+                - generic [ref=f1e149]: restricted
+                - textbox "Add item..." [ref=f1e151]
+              - generic [ref=f1e152]:
+                - generic [ref=f1e153]: forbidden
+                - textbox "Add item..." [ref=f1e155]
+          - generic [ref=f1e156]:
+            - heading "Phase 3" [level=4] [ref=f1e157]
+            - generic [ref=f1e158]:
+              - generic [ref=f1e159]:
+                - generic [ref=f1e160]: Phase Name
+                - textbox [ref=f1e161]: P3
+              - generic [ref=f1e162]:
+                - generic [ref=f1e163]: Description
+                - textbox [ref=f1e164]: d3
+              - generic [ref=f1e165]:
+                - generic [ref=f1e166]: allowed
+                - textbox "Add item..." [ref=f1e168]
+              - generic [ref=f1e169]:
+                - generic [ref=f1e170]: restricted
+                - textbox "Add item..." [ref=f1e172]
+              - generic [ref=f1e173]:
+                - generic [ref=f1e174]: forbidden
+                - textbox "Add item..." [ref=f1e176]
+        - generic [ref=f1e108]:
+          - button "Save Policy" [ref=f1e109] [cursor=pointer]
+          - button "Reset to Default" [ref=f1e110] [cursor=pointer]

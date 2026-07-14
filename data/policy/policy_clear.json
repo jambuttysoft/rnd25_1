@@ -1,30 +1,85 @@
 {
   "policy_name": "clear",
-  "project_name": "Test",
-  "description": "Test",
+  "project_name": "Acme Corp — R&D Division",
+  "description": "Expense policy for Acme Corp R&D division. Covers all expenses incurred during research, development, prototyping, and team operations. All expenses must be substantiated with receipts and aligned with the current project phase.",
   "phases": [
     {
-      "name": "P1",
-      "description": "d1",
+      "name": "Phase 1: Research & Prototyping",
+      "description": "Initial research, proof-of-concept development, hardware procurement, and team setup. Lab equipment and prototyping materials are expected. No client travel yet.",
       "allowed": [
-        "x"
+        "Lab equipment (oscilloscopes, soldering stations, measurement tools)",
+        "Prototyping materials (PCB fabrication, 3D printing filament, electronic components)",
+        "Software licenses (CAD, simulation tools, IDE subscriptions)",
+        "Cloud compute credits (AWS/GCP/Azure for model training)",
+        "Office equipment (monitors, keyboards, standing desks)",
+        "Technical books and research papers",
+        "Team lunch (max €25/person, 4x/month)"
       ],
-      "restricted": [],
-      "forbidden": []
+      "restricted": [
+        "Laptops over €3000 require VP approval",
+        "Conference travel — max 1 domestic conference per quarter",
+        "External consultants — max €5000/month, pre-approved SOW required"
+      ],
+      "forbidden": [
+        "Personal electronics (phones, tablets, headphones)",
+        "Entertainment (movies, games, streaming subscriptions)",
+        "Alcohol purchases",
+        "International travel (no budget before Phase 2)",
+        "Office decorations and furniture over €500",
+        "Cash withdrawals without receipt"
+      ]
     },
     {
-      "name": "P2",
-      "description": "d2",
-      "allowed": [],
-      "restricted": [],
-      "forbidden": []
+      "name": "Phase 2: Development & Testing",
+      "description": "Full-scale development, integration testing, and client pilot deployments. Team collaboration meals and conference attendance expected. Travel budget opens.",
+      "allowed": [
+        "API credits and LLM inference costs (OpenRouter, OpenAI, Anthropic)",
+        "Cloud infrastructure (GPU instances, managed databases, CDN)",
+        "Testing devices (phones, tablets for QA — max 5 devices per team)",
+        "Team collaboration meals (max €40/person, 8x/month)",
+        "Domestic conference tickets and travel",
+        "Client meeting expenses (reasonable meals, parking)",
+        "Software subscriptions (monitoring, CI/CD, security scanning)",
+        "Co-working space day passes for remote team meetups"
+      ],
+      "restricted": [
+        "International conference — max 1 per quarter, €3000 budget cap",
+        "External training courses — max €2000/person/year",
+        "Equipment replacement — only if existing equipment is broken and out of warranty"
+      ],
+      "forbidden": [
+        "Personal travel charged to project",
+        "First-class flight upgrades",
+        "Non-project SaaS subscriptions",
+        "Gifts to clients over €50 without compliance approval",
+        "Alcohol at client meetings",
+        "Entertainment expenses (concerts, sports events)"
+      ]
     },
     {
-      "name": "P3",
-      "description": "d3",
-      "allowed": [],
-      "restricted": [],
-      "forbidden": []
+      "name": "Phase 3: Documentation & Handoff",
+      "description": "Final documentation, paper writing, client handoff, and project retrospective. Spending is primarily on documentation tools, printing, and a small celebration. No new hardware or travel.",
+      "allowed": [
+        "Technical writing tools (documentation generators, diagram software)",
+        "Printing and binding of final reports",
+        "Academic journal submission fees",
+        "Open-source contribution support (domain registration, hosting)",
+        "Team retrospective dinner (max €60/person, one-time)",
+        "Cloud storage for final data archival"
+      ],
+      "restricted": [
+        "API credits — capped at €500 for final validation runs",
+        "Additional software — documentation-only tools"
+      ],
+      "forbidden": [
+        "New hardware purchases",
+        "New software licenses (except documentation tools)",
+        "Travel of any kind",
+        "Conference attendance",
+        "External consultants",
+        "Recurring subscriptions (project is closing)",
+        "Entertainment expenses"
+      ]
     }
   ]
 }

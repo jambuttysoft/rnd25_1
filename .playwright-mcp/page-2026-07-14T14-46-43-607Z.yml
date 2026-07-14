@@ -1,0 +1,159 @@
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - heading "Policy Semantic Audit" [level=1] [ref=e3]
+    - paragraph [ref=e4]: AI-driven expense justification research platform
+  - navigation [ref=e5]:
+    - 'button "E1: OCR" [ref=e6] [cursor=pointer]'
+    - 'button "E2: No-CoT" [ref=e7] [cursor=pointer]'
+    - 'button "E3: CoT" [ref=e8] [cursor=pointer]'
+    - 'button "E4: Phase" [ref=e9] [cursor=pointer]'
+    - 'button "E5: Ambiguity" [ref=e10] [cursor=pointer]'
+    - 'button "E6: Adversarial" [ref=e11] [cursor=pointer]'
+    - button "Annotate" [ref=e12] [cursor=pointer]
+    - button "Policy Editor" [ref=e13] [cursor=pointer]
+    - button "⚙ Settings" [ref=e14] [cursor=pointer]
+  - main [ref=e15]:
+    - generic [ref=e53]:
+      - heading "Policy Editor" [level=2] [ref=e54]
+      - paragraph [ref=e55]: Edit the expense policies used by all experiments. Changes take effect immediately.
+      - generic [ref=e56]:
+        - generic [ref=e57]:
+          - generic [ref=e58]: Policy
+          - combobox [ref=e59]:
+            - option "Clear policy"
+            - option "Vague policy"
+            - option "Contradictory policy" [selected]
+        - generic [ref=e136]: ⚠ Internal contradictions are intentional for Experiment E6. Removing them will break the hallucination detection test.
+        - generic [ref=e60]:
+          - generic [ref=e61]: Project Name
+          - textbox [ref=e62]: AI Receipt Audit System — R&D Project
+        - generic [ref=e63]:
+          - generic [ref=e64]: Description
+          - textbox [ref=e65]: An R&D project developing AI tools. All necessary expenses are pre-approved. Budget is strictly controlled and all purchases require approval.
+        - generic [ref=e66]:
+          - generic [ref=e137]:
+            - heading "Phase 1" [level=4] [ref=e138]
+            - generic [ref=e139]:
+              - generic [ref=e140]:
+                - generic [ref=e141]: Phase Name
+                - textbox [ref=e142]: "Phase 1: QA Modified"
+              - generic [ref=e143]:
+                - generic [ref=e144]: Description
+                - textbox [ref=e145]: Setup phase. No hardware purchases needed as all equipment is provided. Engineers should purchase any equipment they need for development.
+              - generic [ref=e146]:
+                - generic [ref=e147]: allowed
+                - generic [ref=e148]:
+                  - generic [ref=e149]:
+                    - generic [ref=e150]: software licenses
+                    - button "×" [ref=e151] [cursor=pointer]
+                  - generic [ref=e152]:
+                    - generic [ref=e153]: equipment
+                    - button "×" [ref=e154] [cursor=pointer]
+                  - generic [ref=e155]:
+                    - generic [ref=e156]: all technical expenses
+                    - button "×" [ref=e157] [cursor=pointer]
+                  - generic [ref=e257]:
+                    - generic [ref=e258]: qa-test-item
+                    - button "×" [ref=e259] [cursor=pointer]
+                  - textbox "Add item..." [active] [ref=e158]
+              - generic [ref=e159]:
+                - generic [ref=e160]: restricted
+                - generic [ref=e161]:
+                  - generic [ref=e162]:
+                    - generic [ref=e163]: equipment over 500 EUR requires approval
+                    - button "×" [ref=e164] [cursor=pointer]
+                  - generic [ref=e165]:
+                    - generic [ref=e166]: software must be open-source
+                    - button "×" [ref=e167] [cursor=pointer]
+                  - textbox "Add item..." [ref=e168]
+              - generic [ref=e169]:
+                - generic [ref=e170]: forbidden
+                - generic [ref=e171]:
+                  - generic [ref=e172]:
+                    - generic [ref=e173]: proprietary software
+                    - button "×" [ref=e174] [cursor=pointer]
+                  - generic [ref=e175]:
+                    - generic [ref=e176]: hardware
+                    - button "×" [ref=e177] [cursor=pointer]
+                  - textbox "Add item..." [ref=e178]
+          - generic [ref=e179]:
+            - heading "Phase 2" [level=4] [ref=e180]
+            - generic [ref=e181]:
+              - generic [ref=e182]:
+                - generic [ref=e183]: Phase Name
+                - textbox [ref=e184]: "Phase 2: Development"
+              - generic [ref=e185]:
+                - generic [ref=e186]: Description
+                - textbox [ref=e187]: Development phase. Remote work is encouraged. Team must be on-site for collaboration.
+              - generic [ref=e188]:
+                - generic [ref=e189]: allowed
+                - generic [ref=e190]:
+                  - generic [ref=e191]:
+                    - generic [ref=e192]: travel
+                    - button "×" [ref=e193] [cursor=pointer]
+                  - generic [ref=e194]:
+                    - generic [ref=e195]: remote work tools
+                    - button "×" [ref=e196] [cursor=pointer]
+                  - generic [ref=e197]:
+                    - generic [ref=e198]: office expenses
+                    - button "×" [ref=e199] [cursor=pointer]
+                  - generic [ref=e200]:
+                    - generic [ref=e201]: API credits
+                    - button "×" [ref=e202] [cursor=pointer]
+                  - textbox "Add item..." [ref=e203]
+              - generic [ref=e204]:
+                - generic [ref=e205]: restricted
+                - generic [ref=e206]:
+                  - generic [ref=e207]:
+                    - generic [ref=e208]: travel requires pre-approval
+                    - button "×" [ref=e209] [cursor=pointer]
+                  - generic [ref=e210]:
+                    - generic [ref=e211]: no travel budget available
+                    - button "×" [ref=e212] [cursor=pointer]
+                  - textbox "Add item..." [ref=e213]
+              - generic [ref=e214]:
+                - generic [ref=e215]: forbidden
+                - generic [ref=e216]:
+                  - generic [ref=e217]:
+                    - generic [ref=e218]: travel
+                    - button "×" [ref=e219] [cursor=pointer]
+                  - generic [ref=e220]:
+                    - generic [ref=e221]: remote work subscriptions
+                    - button "×" [ref=e222] [cursor=pointer]
+                  - textbox "Add item..." [ref=e223]
+          - generic [ref=e224]:
+            - heading "Phase 3" [level=4] [ref=e225]
+            - generic [ref=e226]:
+              - generic [ref=e227]:
+                - generic [ref=e228]: Phase Name
+                - textbox [ref=e229]: "Phase 3: Completion"
+              - generic [ref=e230]:
+                - generic [ref=e231]: Description
+                - textbox [ref=e232]: Final phase with flexible budget. All spending is frozen pending final budget review.
+              - generic [ref=e233]:
+                - generic [ref=e234]: allowed
+                - generic [ref=e235]:
+                  - generic [ref=e236]:
+                    - generic [ref=e237]: any completion-related expense
+                    - button "×" [ref=e238] [cursor=pointer]
+                  - generic [ref=e239]:
+                    - generic [ref=e240]: celebration
+                    - button "×" [ref=e241] [cursor=pointer]
+                  - textbox "Add item..." [ref=e242]
+              - generic [ref=e243]:
+                - generic [ref=e244]: restricted
+                - generic [ref=e245]:
+                  - generic [ref=e246]:
+                    - generic [ref=e247]: all new expenses require written approval
+                    - button "×" [ref=e248] [cursor=pointer]
+                  - textbox "Add item..." [ref=e249]
+              - generic [ref=e250]:
+                - generic [ref=e251]: forbidden
+                - generic [ref=e252]:
+                  - generic [ref=e253]:
+                    - generic [ref=e254]: any new expenses without approval
+                    - button "×" [ref=e255] [cursor=pointer]
+                  - textbox "Add item..." [ref=e256]
+        - generic [ref=e133]:
+          - button "Save Policy" [ref=e134] [cursor=pointer]
+          - button "Reset to Default" [ref=e135] [cursor=pointer]

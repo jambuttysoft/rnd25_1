@@ -1,0 +1,33 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - heading "Policy Semantic Audit" [level=1] [ref=e3]
+    - paragraph [ref=e4]: AI-driven expense justification research platform
+  - navigation [ref=e5]:
+    - 'button "E1: OCR" [ref=e6] [cursor=pointer]'
+    - 'button "E2: No-CoT" [ref=e7] [cursor=pointer]'
+    - 'button "E3: CoT" [ref=e8] [cursor=pointer]'
+    - 'button "E4: Phase" [ref=e9] [cursor=pointer]'
+    - 'button "E5: Ambiguity" [ref=e10] [cursor=pointer]'
+    - 'button "E6: Adversarial" [ref=e11] [cursor=pointer]'
+    - button "Annotate" [ref=e12] [cursor=pointer]
+    - button "Policy Editor" [ref=e13] [cursor=pointer]
+    - button "⚙ Settings" [ref=e14] [cursor=pointer]
+  - main [ref=e15]:
+    - generic [ref=e28]:
+      - generic [ref=e29]: "Receipt:"
+      - generic [ref=e30]: test-receipt.jpg
+      - button "Change" [ref=e31] [cursor=pointer]
+      - button "✕ Clear" [ref=e32] [cursor=pointer]
+    - generic [ref=e16]:
+      - generic [ref=e17]:
+        - 'heading "E1: OCR Extraction Baseline" [level=2] [ref=e18]'
+        - button "ℹ" [ref=e19] [cursor=pointer]
+      - paragraph [ref=e20]: "Upload a receipt — the model extracts all available fields: vendor details, tax IDs, line items with prices, payment method, and more."
+      - generic [ref=e21]:
+        - generic [ref=e22]: Receipt file (JPG, PNG, PDF)
+        - button "Choose File" [ref=e23]
+        - button "Extract Fields" [ref=e24] [cursor=pointer]
+      - generic [ref=e33]: Enter your API key in Settings first.
+      - generic [ref=e25]:
+        - button "Export JSON" [ref=e26] [cursor=pointer]
+        - button "Export CSV" [ref=e27] [cursor=pointer]

@@ -1,0 +1,51 @@
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - heading "Policy Semantic Audit" [level=1] [ref=e3]
+    - paragraph [ref=e4]: AI-driven expense justification research platform
+  - navigation [ref=e5]:
+    - 'button "E1: OCR" [ref=e6] [cursor=pointer]'
+    - 'button "E2: No-CoT" [ref=e7] [cursor=pointer]'
+    - 'button "E3: CoT" [ref=e8] [cursor=pointer]'
+    - 'button "E4: Phase" [ref=e9] [cursor=pointer]'
+    - 'button "E5: Ambiguity" [ref=e10] [cursor=pointer]'
+    - 'button "E6: Adversarial" [ref=e11] [cursor=pointer]'
+    - button "Annotate" [ref=e12] [cursor=pointer]
+    - button "Policy Editor" [ref=e13] [cursor=pointer]
+    - button "⚙ Settings" [ref=e14] [cursor=pointer]
+  - main [ref=e15]:
+    - generic [ref=e28]:
+      - generic [ref=e29]: "Receipt:"
+      - generic [ref=e30]: test-receipt.jpg
+      - button "Change" [ref=e31] [cursor=pointer]
+      - button "✕ Clear" [ref=e32] [cursor=pointer]
+    - generic [ref=e56]:
+      - heading "Settings" [level=2] [ref=e57]
+      - paragraph [ref=e58]: Configure the API key and models used for all experiments.
+      - generic [ref=e59]:
+        - generic [ref=e60]:
+          - generic [ref=e61]: OpenRouter API Key
+          - textbox "sk-or-..." [ref=e62]: sk-or-test-key-12345
+          - paragraph [ref=e63]: Stored in browser session only — not persisted to disk. Re-enter after page refresh.
+        - generic [ref=e64]:
+          - generic [ref=e65]: Vision Model (OCR — Layer 1)
+          - combobox [ref=e66]:
+            - option "google/gemini-2.5-flash (recommended)" [selected]
+            - option "qwen/qwen2.5-vl-72b-instruct"
+            - option "anthropic/claude-sonnet-4-5"
+        - generic [ref=e67]:
+          - generic [ref=e68]: Reasoning Model (Verdict — Layer 3)
+          - combobox [ref=e69]:
+            - option "google/gemini-2.5-flash (recommended)" [selected]
+            - option "qwen/qwen2.5-72b-instruct"
+            - option "mistralai/mixtral-8x7b-instruct"
+            - option "anthropic/claude-sonnet-4-5"
+          - paragraph [ref=e70]: Switch models to compare behavior across E2–E6.
+        - generic [ref=e71]:
+          - button "Save Settings" [active] [ref=e72] [cursor=pointer]
+          - button "Test Connection" [ref=e73] [cursor=pointer]
+        - generic [ref=e79]: ✓ Settings saved
+        - separator [ref=e74]
+        - heading "Experiment Results" [level=3] [ref=e75]
+        - generic [ref=e76]:
+          - button "Export All Results (JSON)" [ref=e77] [cursor=pointer]
+          - button "Clear All Results" [ref=e78] [cursor=pointer]

@@ -2,10 +2,18 @@
   "active_plan": "/Volumes/extdisk/WORK/RND2026/RND1/.sisyphus/plans/experiment-polish.md",
   "started_at": "2026-07-14T14:22:09.239Z",
   "session_ids": [
-    "ses_09f430885ffe3ZfzlkW8agYjUe"
+    "ses_09f430885ffe3ZfzlkW8agYjUe",
+    "ses_09ee9eb22ffelvrK7cQkUKcszT",
+    "ses_09ee9dfaeffef5nHNl7hMuafM0",
+    "ses_09ee9cb96ffeUcoGGBEx5I0Dob",
+    "ses_09ee9ba8cffevpHzvG1vB8Rm25"
   ],
   "session_origins": {
-    "ses_09f430885ffe3ZfzlkW8agYjUe": "direct"
+    "ses_09f430885ffe3ZfzlkW8agYjUe": "direct",
+    "ses_09ee9eb22ffelvrK7cQkUKcszT": "appended",
+    "ses_09ee9dfaeffef5nHNl7hMuafM0": "appended",
+    "ses_09ee9cb96ffeUcoGGBEx5I0Dob": "appended",
+    "ses_09ee9ba8cffevpHzvG1vB8Rm25": "appended"
   },
   "plan_name": "experiment-polish",
   "agent": "atlas",
@@ -81,6 +89,15 @@
       "agent": "Sisyphus-Junior",
       "category": "visual-engineering",
       "updated_at": "2026-07-14T14:43:58.536Z"
+    },
+    "final-wave:f1": {
+      "task_key": "final-wave:f1",
+      "task_label": "F1",
+      "task_title": "**Plan Compliance Audit** — `oracle`",
+      "session_id": "ses_09ee9ba8cffevpHzvG1vB8Rm25",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-07-14T14:52:49.112Z"
     }
   }
 }

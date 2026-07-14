@@ -1,0 +1,46 @@
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - heading "Policy Semantic Audit" [level=1] [ref=e3]
+    - paragraph [ref=e4]: AI-driven expense justification research platform
+  - navigation [ref=e5]:
+    - 'button "E1: OCR" [ref=e6] [cursor=pointer]'
+    - 'button "E2: No-CoT" [active] [ref=e7] [cursor=pointer]'
+    - 'button "E3: CoT" [ref=e8] [cursor=pointer]'
+    - 'button "E4: Phase" [ref=e9] [cursor=pointer]'
+    - 'button "E5: Ambiguity" [ref=e10] [cursor=pointer]'
+    - 'button "E6: Adversarial" [ref=e11] [cursor=pointer]'
+    - button "Annotate" [ref=e12] [cursor=pointer]
+    - button "Policy Editor" [ref=e13] [cursor=pointer]
+    - button "⚙ Settings" [ref=e14] [cursor=pointer]
+  - main [ref=e15]:
+    - generic [ref=e28]:
+      - generic [ref=e29]: "Receipt:"
+      - generic [ref=e30]: test-receipt.jpg
+      - button "Change" [ref=e31] [cursor=pointer]
+      - button "✕ Clear" [ref=e32] [cursor=pointer]
+    - generic [ref=e35]:
+      - generic [ref=e36]:
+        - 'heading "E2: Zero-shot Verdict (No Chain-of-Thought)" [level=2] [ref=e37]'
+        - button "ℹ" [ref=e38] [cursor=pointer]
+      - paragraph [ref=e39]: Upload a receipt — model gives a direct verdict without step-by-step reasoning.
+      - generic [ref=e40]:
+        - generic [ref=e41]:
+          - generic [ref=e42]: Receipt file
+          - button "Choose File" [ref=e43]
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - generic [ref=e46]: Policy variant
+            - combobox [ref=e47]:
+              - option "Clear policy" [selected]
+              - option "Vague policy"
+              - option "Contradictory policy"
+          - generic [ref=e48]:
+            - generic [ref=e49]: Project phase
+            - combobox [ref=e50]:
+              - 'option "Phase 1: Infrastructure Setup"'
+              - 'option "Phase 2: Experimentation" [selected]'
+              - 'option "Phase 3: Evaluation & Documentation"'
+        - button "Get Verdict" [ref=e51] [cursor=pointer]
+      - generic [ref=e52]:
+        - button "Export JSON" [ref=e53] [cursor=pointer]
+        - button "Export CSV" [ref=e54] [cursor=pointer]

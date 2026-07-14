@@ -1028,6 +1028,21 @@ async function savePolicy() {
   }
 }
 
+function clearPolicyForm() {
+  if (!confirm('Clear all policy fields? This empties the form but does NOT save. You must click Save to persist changes.')) return
+  document.getElementById('pe-project-name').value = ''
+  document.getElementById('pe-description').value = ''
+  const phases = document.querySelectorAll('#pe-phases > div')
+  phases.forEach(phaseEl => {
+    const nameInput = phaseEl.querySelector('.pe-phase-name')
+    const descInput = phaseEl.querySelector('.pe-phase-desc')
+    if (nameInput) nameInput.value = ''
+    if (descInput) descInput.value = ''
+    phaseEl.querySelectorAll('.pe-tag').forEach(tag => tag.remove())
+  })
+  showResult('pe-result', '<span class="text-gray-600">✓ Form cleared. Click Save to persist your changes.</span>')
+}
+
 async function resetPolicy() {
   const name = document.getElementById('pe-policy').value
   showResult('pe-result', '<span class="text-gray-500">Resetting…</span>')
