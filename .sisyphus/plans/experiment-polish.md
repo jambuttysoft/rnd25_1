@@ -376,7 +376,7 @@ Critical Path: Task 2 → Task 7 → Task 9 → F1-F4
     Evidence: screenshot of E6 modal content
   ```
 
-- [ ] 5. Experiment Info Button Wiring
+- [x] 5. Experiment Info Button Wiring
 
   **What to do**:
   - In `public/index.html`, add `ℹ info-button` button next to each experiment heading:
@@ -552,7 +552,7 @@ Critical Path: Task 2 → Task 7 → Task 9 → F1-F4
     Evidence: screenshot after F5
   ```
 
-- [ ] 8. Policy Editor Tab UI
+- [x] 8. Policy Editor Tab UI
 
   **What to do**:
   - Add new tab button in `public/index.html` navigation (before Settings):

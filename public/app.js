@@ -650,6 +650,148 @@ window.APP.showExperimentInfo = showExperimentInfo
 window.APP.showModal = showModal
 window.APP.closeModal = closeModal
 
+// ─── Policy Editor ─────────────────────────────────────────────────────────
+
+async function loadPolicyEditor() {
+  const sel = document.getElementById('pe-policy')
+  const name = sel.value
+  showResult('pe-result', '')
+  try {
+    const res = await fetch(`/api/policies/${name}`)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const policy = await res.json()
+    document.getElementById('pe-project-name').value = policy.project_name || ''
+    document.getElementById('pe-description').value = policy.description || ''
+
+    const warning = document.getElementById('pe-e6-warning')
+    if (name === 'contradictory') {
+      warning.classList.remove('hidden')
+    } else {
+      warning.classList.add('hidden')
+    }
+
+    const container = document.getElementById('pe-phases')
+    container.innerHTML = policy.phases.map((phase, i) => `
+      <div class="border border-gray-200 rounded-lg p-4">
+        <h4 class="text-sm font-semibold text-gray-700 mb-2">Phase ${i + 1}</h4>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-0.5">Phase Name</label>
+            <input type="text" class="pe-phase-name block w-full text-sm border border-gray-300 rounded px-3 py-1.5" value="${escHtml(phase.name)}">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-0.5">Description</label>
+            <textarea rows="1" class="pe-phase-desc block w-full text-sm border border-gray-300 rounded px-3 py-1.5">${escHtml(phase.description)}</textarea>
+          </div>
+          ${['allowed', 'restricted', 'forbidden'].map(listName => `
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-0.5 capitalize">${listName}</label>
+              <div class="pe-tag-container flex flex-wrap gap-1.5 p-2 border border-gray-200 rounded bg-white min-h-[2rem] text-sm" data-list="${listName}" data-phase="${i}">
+                ${(phase[listName] || []).map(item => `<span class="pe-tag inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs"><span>${escHtml(item)}</span><button class="pe-tag-remove text-gray-400 hover:text-red-500 font-bold leading-none" type="button">&times;</button></span>`).join('')}
+                <input type="text" class="pe-tag-input flex-1 min-w-[80px] border-0 outline-none text-xs bg-transparent" placeholder="Add item...">
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>
+    `).join('')
+  } catch (e) {
+    showError('pe-result', `Failed to load policy: ${e.message}`)
+  }
+}
+
+async function savePolicy() {
+  const name = document.getElementById('pe-policy').value
+  const phases = []
+  document.querySelectorAll('#pe-phases > div').forEach((phaseEl) => {
+    const nameInput = phaseEl.querySelector('.pe-phase-name')
+    const descInput = phaseEl.querySelector('.pe-phase-desc')
+    const lists = {}
+    phaseEl.querySelectorAll('.pe-tag-container').forEach(container => {
+      const listName = container.dataset.list
+      const tags = container.querySelectorAll('.pe-tag span:first-child')
+      lists[listName] = Array.from(tags).map(t => t.textContent)
+    })
+    phases.push({
+      name: nameInput ? nameInput.value : '',
+      description: descInput ? descInput.value : '',
+      allowed: lists.allowed || [],
+      restricted: lists.restricted || [],
+      forbidden: lists.forbidden || [],
+    })
+  })
+
+  const data = {
+    policy_name: name,
+    project_name: document.getElementById('pe-project-name').value,
+    description: document.getElementById('pe-description').value,
+    phases,
+  }
+
+  showResult('pe-result', '<span class="text-gray-500">Saving…</span>')
+  try {
+    const res = await fetch(`/api/policies/${name}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+    const result = await res.json()
+    if (res.ok) {
+      showResult('pe-result', '<span class="text-green-600">✓ Policy saved</span>')
+    } else {
+      showError('pe-result', result.error + (result.details ? ': ' + result.details.join('; ') : ''))
+    }
+  } catch (e) {
+    showError('pe-result', `Save failed: ${e.message}`)
+  }
+}
+
+async function resetPolicy() {
+  const name = document.getElementById('pe-policy').value
+  showResult('pe-result', '<span class="text-gray-500">Resetting…</span>')
+  try {
+    const res = await fetch(`/api/policies/${name}`)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    await loadPolicyEditor()
+    showResult('pe-result', '<span class="text-gray-600">✓ Reset to current saved version</span>')
+  } catch (e) {
+    showError('pe-result', `Reset failed: ${e.message}`)
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.tab === 'policy-editor') {
+        setTimeout(loadPolicyEditor, 50)
+      }
+    })
+  })
+})
+
+document.addEventListener('keydown', (e) => {
+  if (e.target.classList && e.target.classList.contains('pe-tag-input')) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault()
+      const input = e.target
+      const value = input.value.replace(/,/g, '').trim()
+      if (value) {
+        const container = input.closest('.pe-tag-container')
+        const tag = document.createElement('span')
+        tag.className = 'pe-tag inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs'
+        tag.innerHTML = `<span>${escHtml(value)}</span><button class="pe-tag-remove text-gray-400 hover:text-red-500 font-bold leading-none" type="button">&times;</button>`
+        container.insertBefore(tag, input)
+      }
+      input.value = ''
+    }
+  }
+})
+
+document.addEventListener('click', (e) => {
+  if (e.target.classList && e.target.classList.contains('pe-tag-remove')) {
+    e.target.closest('.pe-tag').remove()
+  }
+})
+
 // ─── Shared State Manager (sessionStorage) ──────────────────────────────────
 
 /**
