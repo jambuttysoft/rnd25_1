@@ -147,13 +147,12 @@ async function saveSettings() {
 
 async function testConnection() {
   const { apiKey, model } = getSettings();
-  if (!apiKey) return showError('settings-result', 'Enter your API key first.');
   showResult('settings-result', '<span class="text-gray-500">Testing…</span>');
   try {
     const res = await fetch('/api/test-connection', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ apiKey, model }),
+      body: JSON.stringify({ apiKey: apiKey || '', model }),
     });
     const data = await res.json();
     if (data.ok) showResult('settings-result', `<span class="text-green-600">✓ Connected — model replied: "${data.response}"</span>`);
