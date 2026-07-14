@@ -96,7 +96,7 @@ function restoreTabState(tabName) {
 
 // ─── Settings ────────────────────────────────────────────────────────────────
 
-// API key is kept only in memory — never sent to disk
+// API key persisted in localStorage for convenience (OpenRouter is a research API, not a production secret)
 let _apiKey = '';
 
 async function loadSettings() {
@@ -108,7 +108,7 @@ async function loadSettings() {
   if (saved) {
     try {
       const s = JSON.parse(saved);
-      if (s.apiKey) { _apiKey = s.apiKey; }
+      if (s.apiKey) { _apiKey = s.apiKey; apikeyEl.value = s.apiKey; }
       if (s.model) modelEl.value = s.model;
       if (s.visionModel) visionEl.value = s.visionModel;
     } catch (_) {}
@@ -134,7 +134,7 @@ async function saveSettings() {
   const { model, visionModel, apiKey } = getSettings();
   if (apiKey) _apiKey = apiKey;
 
-  localStorage.setItem('psa_settings', JSON.stringify({ model, visionModel }));
+  localStorage.setItem('psa_settings', JSON.stringify({ apiKey, model, visionModel }));
 
   await fetch('/api/settings', {
     method: 'POST',
