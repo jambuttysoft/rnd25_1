@@ -42,7 +42,9 @@ function saveConfig(cfg) {
 
 // Settings routes
 app.get('/api/settings', (req, res) => {
-  res.json(loadConfig());
+  const cfg = loadConfig();
+  cfg.apiKey = process.env.OPENROUTER_API_KEY || '';
+  res.json(cfg);
 });
 
 app.post('/api/settings', (req, res) => {

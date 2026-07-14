@@ -119,6 +119,7 @@ async function loadSettings() {
     const cfg = await res.json();
     if (cfg.model && !saved) modelEl.value = cfg.model;
     if (cfg.visionModel && !saved) visionEl.value = cfg.visionModel;
+    if (cfg.apiKey && !_apiKey) { _apiKey = cfg.apiKey; apikeyEl.value = cfg.apiKey; }
   } catch (_) {}
 }
 
