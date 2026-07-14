@@ -45,6 +45,15 @@
       "agent": "Sisyphus-Junior",
       "category": "quick",
       "updated_at": "2026-07-14T14:29:52.777Z"
+    },
+    "todo:6": {
+      "task_key": "todo:6",
+      "task_label": "6",
+      "task_title": "Shared Receipt Bar + Extraction Cache",
+      "session_id": "ses_09ef503dcffeVOdv9vyFmXUDJO",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-07-14T14:34:23.859Z"
     }
   }
 }

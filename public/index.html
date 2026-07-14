@@ -31,6 +31,14 @@
   <!-- Tab Panels -->
   <main class="max-w-4xl mx-auto px-6 py-8">
 
+    <!-- Shared Receipt Bar -->
+    <div id="receipt-bar" class="hidden bg-white border border-gray-200 rounded-lg p-3 mb-6 flex items-center gap-3">
+      <span class="text-xs font-medium text-gray-500 uppercase">Receipt:</span>
+      <span id="receipt-filename" class="text-sm text-gray-700 truncate flex-1"></span>
+      <button id="receipt-change-btn" class="text-xs text-blue-600 hover:text-blue-800 font-medium">Change</button>
+      <button id="receipt-clear-btn" class="text-xs text-gray-400 hover:text-red-600 font-medium">✕ Clear</button>
+    </div>
+
     <!-- E1: OCR Extraction -->
     <div id="tab-e1" class="tab-panel">
       <div class="flex items-center gap-2">

@@ -121,119 +121,108 @@ function escHtml(str) {
 
 // Read file as base64 string (strips data: prefix)
 async function getFileData(inputId) {
-  const input = document.getElementById(inputId);
-  if (!input || !input.files[0]) throw new Error('Please select a file first.');
-  const file = input.files[0];
+  const input = document.getElementById(inputId)
+  // Check shared receipt first
+  const shared = window.APP.state.getReceipt()
+  if ((!input || !input.files[0]) && shared) {
+    return shared
+  }
+  if (!input || !input.files[0]) throw new Error('Please select a file first.')
+  const file = input.files[0]
   const base64 = await new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = e => resolve(e.target.result.split(',')[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-  return { base64, mimeType: file.type || 'image/jpeg', filename: file.name };
+    const reader = new FileReader()
+    reader.onload = e => resolve(e.target.result.split(',')[1])
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+  const fileData = { base64, mimeType: file.type || 'image/jpeg', filename: file.name }
+  // Store in shared state
+  window.APP.state.setReceipt(fileData)
+  updateReceiptBar(fileData)
+  return fileData
+}
+
+function updateReceiptBar(fileData) {
+  const bar = document.getElementById('receipt-bar')
+  const name = document.getElementById('receipt-filename')
+  if (fileData && fileData.filename) {
+    name.textContent = fileData.filename
+    bar.classList.remove('hidden')
+  } else {
+    bar.classList.add('hidden')
+    name.textContent = ''
+  }
 }
 
 // ─── E1: OCR Extraction ───────────────────────────────────────────────────────
 
+function renderExtractionResult(f) {
+  if (!f) return ''
+  const fields = [
+    { label: 'Vendor', key: 'vendor', section: 'vendor' },
+    { label: 'Vendor Address', key: 'vendor_address', section: 'vendor' },
+    { label: 'Vendor Phone', key: 'vendor_phone', section: 'vendor' },
+    { label: 'Vendor Tax ID', key: 'vendor_tax_id', section: 'vendor' },
+    { label: 'Receipt #', key: 'receipt_number', section: 'receipt' },
+    { label: 'Date', key: 'date', section: 'receipt' },
+    { label: 'Time', key: 'time', section: 'receipt' },
+    { label: 'Payment Method', key: 'payment_method', section: 'receipt' },
+    { label: 'Subtotal', key: 'subtotal', section: 'amounts' },
+    { label: 'Tax Amount', key: 'tax_amount', section: 'amounts' },
+    { label: 'Tax Rate', key: 'tax_rate', section: 'amounts' },
+    { label: 'Total Amount', key: 'amount', section: 'amounts' },
+    { label: 'Currency', key: 'currency', section: 'amounts' },
+    { label: 'Category', key: 'category', section: 'class' },
+  ]
+  const sections = [
+    { id: 'vendor', title: 'Vendor' },
+    { id: 'receipt', title: 'Receipt Details' },
+    { id: 'amounts', title: 'Amounts & Tax' },
+    { id: 'class', title: 'Classification' },
+  ]
+  const renderRow = (label, val) => {
+    const d = val != null ? escHtml(typeof val === 'number' ? val.toFixed(2) : String(val)) : '<span class="text-gray-400 italic">null</span>'
+    return `<tr class="border-b border-gray-100 last:border-0"><td class="py-1.5 pr-4 text-gray-500 w-36 text-xs">${escHtml(label)}</td><td class="py-1.5 font-mono text-xs">${d}</td></tr>`
+  }
+  let itemsHtml = ''
+  if (f.line_items && f.line_items.length) {
+    itemsHtml = `<h4 class="font-medium text-xs text-gray-500 mt-4 mb-2 uppercase">Line Items</h4><table class="w-full text-xs"><thead><tr class="text-gray-400 border-b border-gray-100"><td class="py-1 pr-2">#</td><td class="py-1 pr-2">Description</td><td class="py-1 pr-2 text-right">Qty</td><td class="py-1 pr-2 text-right">Unit</td><td class="py-1 text-right">Total</td></tr></thead><tbody>${f.line_items.map((item, i) => { const desc = typeof item === 'string' ? item : item.description || ''; const qty = typeof item === 'object' ? item.quantity : null; const unit = typeof item === 'object' ? item.unit_price : null; const total = typeof item === 'object' ? item.total_price : null; return `<tr class="border-b border-gray-100 last:border-0"><td class="py-1 pr-2 text-gray-400">${i+1}</td><td class="py-1 pr-2 font-mono">${escHtml(desc)}</td><td class="py-1 pr-2 text-right font-mono">${qty != null ? qty : '&mdash;'}</td><td class="py-1 pr-2 text-right font-mono">${unit != null ? Number(unit).toFixed(2) : '&mdash;'}</td><td class="py-1 text-right font-mono">${total != null ? Number(total).toFixed(2) : '&mdash;'}</td></tr>` }).join('')}</tbody></table>`
+  }
+  return `<div class="bg-white rounded-lg border border-gray-200 p-5"><h3 class="font-semibold text-sm mb-4">Extracted Receipt Data</h3>${sections.map(s => { const rows = fields.filter(f2 => f2.section === s.id).map(f2 => renderRow(f2.label, f[f2.key])).join(''); return `<h4 class="font-medium text-xs text-gray-500 mt-3 mb-1.5 uppercase">${s.title}</h4><table class="w-full text-xs"><tbody>${rows}</tbody></table>` }).join('')}${itemsHtml}</div>`
+}
+
 async function runE1() {
-  const btnId = 'e1-btn';
-  setLoading(btnId, true);
-  showResult('e1-result', '');
+  const btnId = 'e1-btn'
+  setLoading(btnId, true)
+  showResult('e1-result', '')
   try {
-    const { base64, mimeType } = await getFileData('e1-file');
-    const { apiKey, visionModel } = getSettings();
-    if (!apiKey) { showError('e1-result', 'Enter your API key in Settings first.'); return; }
+    const { base64, mimeType } = await getFileData('e1-file')
+    const { apiKey, visionModel } = getSettings()
+    if (!apiKey) { showError('e1-result', 'Enter your API key in Settings first.'); return }
+
+    // Check extraction cache
+    const hash = window.APP.state.computeHash(base64)
+    const cached = window.APP.state.getExtraction(hash)
+    if (cached && cached.visionModel === visionModel) {
+      showResult('e1-result', `<div class="text-xs text-gray-400 mb-2">Using cached extraction from ${new Date(cached.timestamp).toLocaleTimeString()}</div>` + renderExtractionResult(cached))
+      return
+    }
 
     const res = await fetch('/api/extract', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ base64, mimeType, apiKey, model: visionModel }),
-    });
-    const data = await res.json();
-    if (data.error) return showError('e1-result', data.error);
-    const f = data.extraction;
-    const fields = [
-      { label: 'Vendor', key: 'vendor', section: 'vendor' },
-      { label: 'Vendor Address', key: 'vendor_address', section: 'vendor' },
-      { label: 'Vendor Phone', key: 'vendor_phone', section: 'vendor' },
-      { label: 'Vendor Tax ID', key: 'vendor_tax_id', section: 'vendor' },
-      { label: 'Receipt #', key: 'receipt_number', section: 'receipt' },
-      { label: 'Date', key: 'date', section: 'receipt' },
-      { label: 'Time', key: 'time', section: 'receipt' },
-      { label: 'Payment Method', key: 'payment_method', section: 'receipt' },
-      { label: 'Subtotal', key: 'subtotal', section: 'amounts' },
-      { label: 'Tax Amount', key: 'tax_amount', section: 'amounts' },
-      { label: 'Tax Rate', key: 'tax_rate', section: 'amounts' },
-      { label: 'Total Amount', key: 'amount', section: 'amounts' },
-      { label: 'Currency', key: 'currency', section: 'amounts' },
-      { label: 'Category', key: 'category', section: 'class' },
-    ];
+    })
+    const data = await res.json()
+    if (data.error) return showError('e1-result', data.error)
 
-    const renderRow = (k, val) => {
-      const d = val != null ? escHtml(typeof val === 'number' ? val.toFixed(2) : String(val)) : '<span class="text-gray-400 italic">null</span>';
-      return `<tr class="border-b border-gray-100 last:border-0">
-        <td class="py-1.5 pr-4 text-gray-500 w-36 text-xs">${escHtml(k)}</td>
-        <td class="py-1.5 font-mono text-xs">${d}</td>
-      </tr>`;
-    };
-
-    const sections = [
-      { id: 'vendor', title: 'Vendor' },
-      { id: 'receipt', title: 'Receipt Details' },
-      { id: 'amounts', title: 'Amounts & Tax' },
-      { id: 'class', title: 'Classification' },
-    ];
-
-    let itemsHtml = '';
-    if (f.line_items && f.line_items.length) {
-      itemsHtml = `
-        <h4 class="font-medium text-xs text-gray-500 mt-4 mb-2 uppercase">Line Items</h4>
-        <table class="w-full text-xs">
-          <thead>
-            <tr class="text-gray-400 border-b border-gray-100">
-              <td class="py-1 pr-2 w-10">#</td>
-              <td class="py-1 pr-2">Description</td>
-              <td class="py-1 pr-2 text-right">Qty</td>
-              <td class="py-1 pr-2 text-right">Unit</td>
-              <td class="py-1 text-right">Total</td>
-            </tr>
-          </thead>
-          <tbody>
-            ${f.line_items.map((item, i) => {
-              const desc = typeof item === 'string' ? item : item.description || '';
-              const qty = typeof item === 'object' ? item.quantity : null;
-              const unit = typeof item === 'object' ? item.unit_price : null;
-              const total = typeof item === 'object' ? item.total_price : null;
-              return `<tr class="border-b border-gray-100 last:border-0">
-                <td class="py-1 pr-2 text-gray-400">${i + 1}</td>
-                <td class="py-1 pr-2 font-mono">${escHtml(desc)}</td>
-                <td class="py-1 pr-2 text-right font-mono">${qty != null ? qty : '—'}</td>
-                <td class="py-1 pr-2 text-right font-mono">${unit != null ? Number(unit).toFixed(2) : '—'}</td>
-                <td class="py-1 text-right font-mono">${total != null ? Number(total).toFixed(2) : '—'}</td>
-              </tr>`;
-            }).join('')}
-          </tbody>
-        </table>`;
-    } else if (f.line_items && f.line_items.length === 0) {
-      itemsHtml = '<p class="text-xs text-gray-400 mt-3">No line items extracted</p>';
-    }
-
-    showResult('e1-result', `
-      <div class="bg-white rounded-lg border border-gray-200 p-5">
-        <h3 class="font-semibold text-sm mb-4">Extracted Receipt Data</h3>
-        ${sections.map(s => {
-          const rows = fields.filter(f => f.section === s.id).map(f => renderRow(f.label, data.extraction[f.key])).join('');
-          return `
-            <h4 class="font-medium text-xs text-gray-500 mt-3 mb-1.5 uppercase">${s.title}</h4>
-            <table class="w-full text-xs"><tbody>${rows}</tbody></table>
-          `;
-        }).join('')}
-        ${itemsHtml}
-      </div>`);
+    // Cache the extraction
+    window.APP.state.setExtraction(hash, { ...data.extraction, visionModel, timestamp: new Date().toISOString() })
+    showResult('e1-result', renderExtractionResult(data.extraction))
   } catch (e) {
-    showError('e1-result', e.message);
+    showError('e1-result', e.message)
   } finally {
-    setLoading(btnId, false);
+    setLoading(btnId, false)
   }
 }
 
@@ -900,4 +889,22 @@ window.APP = window.APP || {}
 window.APP.state = StateManager
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
-loadSettings();
+
+document.getElementById('receipt-change-btn')?.addEventListener('click', () => {
+  const visibleInput = document.querySelector('.tab-panel:not(.hidden) input[type="file"]')
+  if (visibleInput) visibleInput.click()
+})
+
+document.getElementById('receipt-clear-btn')?.addEventListener('click', () => {
+  window.APP.state.clearReceipt()
+  updateReceiptBar(null)
+  document.querySelectorAll('input[type="file"]').forEach(el => el.value = '')
+})
+
+loadSettings()
+
+// Restore shared receipt on page load
+const savedReceipt = window.APP.state.getReceipt()
+if (savedReceipt) {
+  updateReceiptBar(savedReceipt)
+}

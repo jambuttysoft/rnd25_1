@@ -149,3 +149,9 @@ body.modal-open {
   font-size: 0.75rem;
   background: transparent;
 }
+
+/* ─── Receipt bar ─────────────────────────────────────────────────────────── */
+#receipt-bar {
+  background: #f0fdf4;
+  border-color: #86efac;
+}

@@ -419,7 +419,7 @@ Critical Path: Task 2 → Task 7 → Task 9 → F1-F4
     Evidence: screenshot per tab
   ```
 
-- [ ] 6. Shared Receipt Bar + Extraction Cache
+- [x] 6. Shared Receipt Bar + Extraction Cache
 
   **What to do**:
   - Add a shared receipt upload section at the top of the main content area (above experiment panels):
