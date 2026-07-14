@@ -519,5 +519,112 @@ async function saveAnnotation() {
   }
 }
 
+// ─── Shared State Manager (sessionStorage) ──────────────────────────────────
+
+/**
+ * Simple hash for receipt deduplication (first 20 chars of base64).
+ * @param {string} str - base64 string to hash
+ * @returns {string} first 20 chars (enough to identify unique receipts)
+ */
+const psaHash = (str) => {
+  if (!str) return ''
+  // Use first 20 chars of the base64 as a content-based identifier
+  // Not crypto-secure but enough to detect same receipt
+  let hash = 0
+  for (let i = 0; i < Math.min(str.length, 100); i++) {
+    const char = str.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(36).slice(0, 8)
+}
+
+const StateManager = {
+  // ─── Receipt state ───
+  setReceipt(fileData) {
+    const entry = {
+      ...fileData,
+      hash: psaHash(fileData.base64),
+      timestamp: new Date().toISOString(),
+    }
+    try {
+      sessionStorage.setItem('psa_receipt', JSON.stringify(entry))
+    } catch (e) {
+      console.warn('sessionStorage quota exceeded for receipt', e.message)
+    }
+    return entry
+  },
+
+  getReceipt() {
+    try {
+      const raw = sessionStorage.getItem('psa_receipt')
+      return raw ? JSON.parse(raw) : null
+    } catch { return null }
+  },
+
+  clearReceipt() {
+    sessionStorage.removeItem('psa_receipt')
+    // Also clear extraction caches (they reference receipt hash)
+    const keysToRemove = []
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i)
+      if (key && key.startsWith('psa_extraction_')) {
+        keysToRemove.push(key)
+      }
+    }
+    keysToRemove.forEach(k => sessionStorage.removeItem(k))
+  },
+
+  // ─── Per-tab state ───
+  setTabState(tabName, state) {
+    try {
+      sessionStorage.setItem(`psa_tab_${tabName}`, JSON.stringify(state))
+    } catch (e) {
+      console.warn('sessionStorage quota exceeded for tab state', e.message)
+    }
+  },
+
+  getTabState(tabName) {
+    try {
+      const raw = sessionStorage.getItem(`psa_tab_${tabName}`)
+      return raw ? JSON.parse(raw) : null
+    } catch { return null }
+  },
+
+  clearTabState(tabName) {
+    sessionStorage.removeItem(`psa_tab_${tabName}`)
+  },
+
+  // ─── Extraction cache ───
+  computeHash(base64) {
+    return psaHash(base64)
+  },
+
+  setExtraction(hash, data) {
+    try {
+      sessionStorage.setItem(`psa_extraction_${hash}`, JSON.stringify(data))
+    } catch (e) {
+      console.warn('sessionStorage quota exceeded for extraction cache', e.message)
+    }
+  },
+
+  getExtraction(hash) {
+    try {
+      const raw = sessionStorage.getItem(`psa_extraction_${hash}`)
+      return raw ? JSON.parse(raw) : null
+    } catch { return null }
+  },
+
+  clearExtraction(hash) {
+    if (hash) {
+      sessionStorage.removeItem(`psa_extraction_${hash}`)
+    }
+  },
+}
+
+// Expose for console access and onclick handlers
+window.APP = window.APP || {}
+window.APP.state = StateManager
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
 loadSettings();

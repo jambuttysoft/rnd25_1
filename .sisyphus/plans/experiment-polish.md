@@ -185,7 +185,7 @@ Critical Path: Task 2 → Task 7 → Task 9 → F1-F4
     Evidence: terminal log
   ```
 
-- [ ] 2. Build Shared State Manager (sessionStorage)
+- [x] 2. Build Shared State Manager (sessionStorage)
 
   **What to do**:
   - Create a new section in `public/app.js`: `// ─── Shared State Manager ───`
