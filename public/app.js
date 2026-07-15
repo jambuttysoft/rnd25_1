@@ -372,6 +372,7 @@ async function runE1() {
     const { base64, mimeType } = await getFileData('e1-file')
     const { apiKey, visionModel } = getSettings()
 
+    const hash = window.APP.state.computeHash(base64)
     // Cache check removed for E1 per user request
     const res = await fetch('/api/extract', {
       method: 'POST',
