@@ -1269,3 +1269,21 @@ if (savedReceipt) {
   updateReceiptBar(savedReceipt)
   syncReceiptIndicator('e1')
 }
+
+// Automatically sync file input selections to global receipt state
+document.querySelectorAll('input[type=\"file\"]').forEach(input => {
+  input.addEventListener('change', async (e) => {
+    if (!e.target.files || !e.target.files[0]) return;
+    const file = e.target.files[0];
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = ev => resolve(ev.target.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    const fileData = { base64, mimeType: file.type || 'image/jpeg', filename: file.name };
+    window.APP.state.setReceipt(fileData);
+    updateReceiptBar(fileData);
+    syncReceiptIndicator(_currentTab);
+  });
+});
