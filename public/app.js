@@ -372,23 +372,7 @@ async function runE1() {
     const { base64, mimeType } = await getFileData('e1-file')
     const { apiKey, visionModel } = getSettings()
 
-    // Check extraction cache
-    const hash = window.APP.state.computeHash(base64)
-    const cached = window.APP.state.getExtraction(hash)
-    if (cached && cached.visionModel === visionModel) {
-      const cachedTime = new Date(cached.timestamp).toLocaleTimeString()
-      const metaHtml = buildMetaHtml({ visionModel, cached: cachedTime, timestamp: cached.timestamp })
-      showResult('e1-result', renderExtractionResult(cached) + metaHtml)
-      ResultsStore.addResult('e1', {
-        config: { visionModel, filename: window.APP.state.getReceipt()?.filename, cached: true },
-        result: cached,
-        hash,
-      })
-      saveCurrentTabState()
-      updateTabRunCounts()
-      return
-    }
-
+    // Cache check removed for E1 per user request
     const res = await fetch('/api/extract', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1174,6 +1158,9 @@ const psaHash = (str) => {
 const StateManager = {
   // ─── Receipt state ───
   setReceipt(fileData) {
+    // Clear any locally selected files so the shared receipt takes priority
+    document.querySelectorAll('input[type=\"file\"]').forEach(el => el.value = '')
+    
     const entry = {
       ...fileData,
       hash: psaHash(fileData.base64),
