@@ -6,20 +6,15 @@
   <title>Policy Editor — TOTALFLOW Compliance Intelligence Engine</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 
   <header class="app-header">
     <div class="app-header__inner">
-      <a href="index.html" style="display: flex; align-items: center; gap: 16px; text-decoration: none;">
+      <a href="index.html" style="display: flex; align-items: center; text-decoration: none;">
         <img src="/jblogo.png" alt="Jambutty" class="app-header__logo">
-        <span class="app-header__brand">Jambutty</span>
-        <div class="app-header__title">
-          <h1>Policy Semantic Audit</h1>
-          <p>AI-driven expense justification research platform</p>
-        </div>
       </a>
     </div>
   </header>
@@ -48,93 +43,13 @@
       <button id="receipt-clear-btn" style="color: var(--ink-faint); font-weight: 500; background: none; border: none; cursor: pointer;">✕ Clear</button>
     </div>
   </div>
-
-  <main>
-    <div id="tab-policy-editor" class="tab-content tab-panel">
-      <header class="page-header">
-        <h2>Policy Editor</h2>
-        <p>Define and maintain the controlled organisational policy variants used across Experiments E2–E6. Saved policy changes apply to future experiment runs and are versioned to preserve research reproducibility.</p>
-      </header>
-
-      <div class="action-row">
-        <button onclick="showModal('PE: Policy Editor — Research Design', RD_CONTENT_PE)" class="btn-outline">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
-          Research Design
-        </button>
-        <button onclick="showModal('PE: Policy Editor — Practical Example', PE_CONTENT_PE)" class="btn-outline">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
-          Practical Example
-        </button>
-      </div>
-
-      <div class="research-notice">
-        <strong>Research control notice:</strong> Saved policy changes apply only to future experiment runs. Existing experiment results remain linked to the exact policy version used when they were generated. Every change requires a reason and increments the version.
-      </div>
-
-      <div class="card" style="margin-bottom: 20px;">
-        <h4 style="font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 12px;">Status</h4>
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; font-size: 12px;">
-          <div><span style="color: var(--ink-mute);">Status:</span> <span id="pe-status-label" style="color: var(--emerald); font-weight: 700;">Saved</span></div>
-          <div><span style="color: var(--ink-mute);">Version:</span> <span id="pe-version-label" style="font-family: var(--font-mono); font-weight: 500;">v1.0</span></div>
-          <div><span style="color: var(--ink-mute);">Last updated:</span> <span id="pe-updated-label" style="color: var(--ink-mute);">—</span></div>
-          <div><span style="color: var(--ink-mute);">Used in runs:</span> <span id="pe-runs-label" style="color: var(--ink-mute);">—</span></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-          <div>
-            <label class="field-label" for="pe-policy">Policy variant</label>
-            <select id="pe-policy" class="field-select" onchange="loadPolicyEditor()">
-              <option value="clear">Clear Policy</option>
-              <option value="vague">Vague Policy</option>
-              <option value="contradictory">Contradictory Policy</option>
-            </select>
-          </div>
-          <div>
-            <label class="field-label" for="pe-change-reason">Reason for change</label>
-            <input id="pe-change-reason" type="text" placeholder="Explain why this policy version is being changed" class="field-input-text">
-          </div>
-        </div>
-        <div id="pe-e6-warning" class="hidden" style="background: var(--bg-warning); border: 1px solid #fcd34d; color: var(--amber); border-radius: var(--r-sm); padding: 10px 14px; font-size: 12px; margin-bottom: 12px;">
-          ⚠ Internal contradictions are intentional for Experiment E6. Removing them will break the hallucination detection test.
-        </div>
-        <div style="margin-bottom: 12px;">
-          <label class="field-label" for="pe-project-name">Project name</label>
-          <input id="pe-project-name" type="text" class="field-input-text">
-        </div>
-        <div style="margin-bottom: 12px;">
-          <label class="field-label" for="pe-description">Description</label>
-          <textarea id="pe-description" rows="2" class="field-input-text"></textarea>
-        </div>
-        <div id="pe-phases" class="space-y-3" style="margin-bottom: 16px;"></div>
-        <div style="display: flex; gap: 12px; align-items: center;">
-          <button id="pe-save-btn" onclick="savePolicy()" class="btn-primary">Save policy</button>
-          <button id="pe-reset-btn" onclick="resetPolicy()" class="btn-ghost">Reset to default</button>
-          <button id="pe-clear-btn" onclick="clearPolicyForm()" class="btn-ghost">Clear form</button>
-          <span id="pe-result" class="caption"></span>
-        </div>
-      </div>
-    </div>
-
+<main></main>
   <footer class="app-footer">
-    <div class="app-footer__inner">
+    <div class="app-footer__inner" style="justify-content: space-between; align-items: center;">
       <div class="footer-brand">
-        <img src="/tflogo.png" alt="TOTAL FLOW">
-        <span class="name">TOTALFLOW</span>
+        <img src="/tflogo.png" alt="TOTAL FLOW" class="footer-logo">
       </div>
-      <div class="footer-divider"></div>
-      <div class="footer-info">
-        <span class="title">TOTALFLOW Compliance Intelligence Engine</span>
-        <span class="title">Semantic Reasoning Research Platform</span>
-        <span class="accent">Research Programme &bull; R&amp;D 2025</span>
-        <span class="disclaimer">The TOTALFLOW Compliance Intelligence Engine, associated software, research methodologies, documentation and underlying intellectual property are proprietary to 3030 Technologies.</span>
-      </div>
-      <div class="footer-divider"></div>
-      <div class="footer-copy">
-        <div>&copy; 2025&ndash;26 3030 Technologies</div>
-        <div>All Rights Reserved.</div>
-      </div>
+      <p class="caption" style="text-align: right; max-width: 50ch;">The TOTALFLOW Compliance Intelligence Engine and associated software are proprietary to <a href="https://3030technologies.com" style="color: var(--indigo); text-decoration: none;">3030 Technologies</a>. © 2025–26.</p>
     </div>
   </footer>
 

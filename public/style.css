@@ -64,36 +64,9 @@ body { display: flex; flex-direction: column; min-height: 100vh; }
 main { flex: 1 0 auto; }
 
 /* ─── Top header band (gray, brand) ────────────────────── */
-.app-header { background: var(--bg-soft); padding: 18px 24px; border-bottom: 1px solid var(--rule); }
-.app-header__inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; gap: 16px; }
-.app-header__logo { width: 36px; height: 36px; flex-shrink: 0; }
-.app-header__brand {
-  font-family: var(--font-brand);
-  font-size: 26px;
-  font-weight: 400;
-  line-height: 1;
-  background: linear-gradient(180deg, #8B1F1F 0%, #6B0E0E 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-  letter-spacing: 0;
-  padding-right: 16px;
-  border-right: 1px solid var(--rule-strong);
-}
-.app-header__title { display: flex; flex-direction: column; gap: 2px; }
-.app-header__title h1 {
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 1.2;
-  color: var(--ink);
-  letter-spacing: -0.01em;
-}
-.app-header__title p {
-  font-size: 12px;
-  color: var(--ink-mute);
-}
+.app-header { background: var(--bg); padding: 16px 24px; border-bottom: 1px solid var(--rule); }
+.app-header__inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; }
+.app-header__logo { width: auto; height: 48px; flex-shrink: 0; }
 
 /* ─── Tab navigation ───────────────────────────────────── */
 .app-tabs { background: var(--bg); border-bottom: 1px solid var(--rule); padding: 0 24px; }
@@ -376,32 +349,24 @@ main { flex: 1 0 auto; }
 }
 .info-note svg { flex-shrink: 0; color: var(--ink-faint); margin-top: 2px; }
 
-/* ─── Footer (3-column, NOT sticky) ────────────────────── */
+/* ─── Footer (single row, logo + copyright) ─────────────── */
 .app-footer {
   background: var(--bg);
   border-top: 1px solid var(--rule);
-  padding: 32px 24px;
+  padding: 24px;
   margin-top: 64px;
 }
 .app-footer__inner {
   max-width: 1280px;
   margin: 0 auto;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 24px;
 }
-@media (max-width: 768px) { .app-footer__inner { flex-direction: column; } }
+@media (max-width: 768px) { .app-footer__inner { flex-direction: column; align-items: flex-start; } }
 .footer-brand { display: flex; align-items: center; gap: 10px; }
-.footer-brand img { width: 28px; height: 28px; }
-.footer-brand .name { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--ink); letter-spacing: 0.04em; }
-.footer-divider { width: 1px; background: var(--rule); align-self: stretch; }
-.footer-info { display: flex; flex-direction: column; gap: 4px; }
-.footer-info .title { font-size: 13px; font-weight: 700; color: var(--ink); }
-.footer-info .accent { font-size: 13px; font-weight: 700; color: var(--indigo); margin-top: 2px; }
-.footer-info .disclaimer { font-size: 11px; color: var(--ink-mute); line-height: 1.5; margin-top: 8px; max-width: 56ch; }
-.footer-copy { text-align: right; font-size: 13px; font-weight: 700; color: var(--ink); line-height: 1.5; }
-@media (max-width: 768px) { .footer-copy { text-align: left; } }
+.footer-logo { width: auto; height: 28px; flex-shrink: 0; }
 
 /* ─── Modal ─────────────────────────────────────────────── */
 .modal-overlay {

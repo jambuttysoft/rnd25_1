@@ -6,20 +6,15 @@
   <title>E1: OCR Extraction Baseline — TOTALFLOW Compliance Intelligence Engine</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 
   <header class="app-header">
     <div class="app-header__inner">
-      <a href="index.html" style="display: flex; align-items: center; gap: 16px; text-decoration: none;">
+      <a href="index.html" style="display: flex; align-items: center; text-decoration: none;">
         <img src="/jblogo.png" alt="Jambutty" class="app-header__logo">
-        <span class="app-header__brand">Jambutty</span>
-        <div class="app-header__title">
-          <h1>Policy Semantic Audit</h1>
-          <p>AI-driven expense justification research platform</p>
-        </div>
       </a>
     </div>
   </header>
@@ -48,88 +43,13 @@
       <button id="receipt-clear-btn" style="color: var(--ink-faint); font-weight: 500; background: none; border: none; cursor: pointer;">✕ Clear</button>
     </div>
   </div>
-
-  <main>
-    <div id="tab-e1" class="tab-content tab-panel">
-      <header class="page-header">
-        <h2>E1: OCR Extraction Baseline</h2>
-        <p>Upload a receipt to evaluate the model's ability to accurately transform unstructured financial documents into structured accounting data for downstream compliance reasoning.</p>
-      </header>
-
-      <div class="action-row">
-        <button onclick="showModal('E1: OCR Extraction Baseline — Research Design', RD_CONTENT_E1)" class="btn-outline">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
-          Research Design
-        </button>
-        <button onclick="showModal('E1: OCR Extraction Baseline — Practical Example', PE_CONTENT_E1)" class="btn-outline">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
-          Practical Example
-        </button>
-      </div>
-
-      <div class="work-area">
-        <div class="card">
-          <label class="field-label" for="e1-file">Receipt file (JPG, PNG, PDF)</label>
-          <input type="file" id="e1-file" accept="image/*,.pdf" class="file-input">
-          <div style="margin-top: 20px; text-align: center;">
-            <button id="e1-btn" data-label="Run Experiment" onclick="runE1()" class="btn-primary">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6v4l3 3v11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V10l3-3z"/><line x1="9" y1="3" x2="15" y2="3"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
-              Run Experiment
-            </button>
-            <p class="helper-text">Execute OCR extraction experiment</p>
-          </div>
-        </div>
-        <div class="info-sidebar">
-          <h3>About this experiment</h3>
-          <p>This experiment establishes a baseline for OCR extraction accuracy by capturing all structured information from real-world receipts without applying any policy reasoning.</p>
-        </div>
-      </div>
-
-      <div class="results-strip">
-        <div id="e1-status" class="status-card status-card--ready">
-          <span class="status-card__icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-          </span>
-          <div class="status-card__text">
-            <p class="status-card__title">Baseline Complete</p>
-            <p class="status-card__desc" id="e1-status-desc">Upload a receipt file to start the baseline OCR extraction experiment.</p>
-          </div>
-        </div>
-        <div class="actions-card">
-          <h4>Actions</h4>
-          <div class="actions-row" id="e1-actions">
-            <button onclick="exportResultAsJSON('e1')" class="btn-outline">Download JSON</button>
-            <button onclick="exportResultAsCSV('e1')" class="btn-outline">Download CSV</button>
-            <button onclick="copyResultAsJSON('e1')" class="btn-outline">Copy JSON</button>
-            <button onclick="viewRawResponse('e1')" class="btn-outline">View Raw</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="info-note">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-        <span>Exports include the structured results. Use "View Raw Response" to inspect the unformatted model output.</span>
-      </div>
-    </div>
-
+<main></main>
   <footer class="app-footer">
-    <div class="app-footer__inner">
+    <div class="app-footer__inner" style="justify-content: space-between; align-items: center;">
       <div class="footer-brand">
-        <img src="/tflogo.png" alt="TOTAL FLOW">
-        <span class="name">TOTALFLOW</span>
+        <img src="/tflogo.png" alt="TOTAL FLOW" class="footer-logo">
       </div>
-      <div class="footer-divider"></div>
-      <div class="footer-info">
-        <span class="title">TOTALFLOW Compliance Intelligence Engine</span>
-        <span class="title">Semantic Reasoning Research Platform</span>
-        <span class="accent">Research Programme &bull; R&amp;D 2025</span>
-        <span class="disclaimer">The TOTALFLOW Compliance Intelligence Engine, associated software, research methodologies, documentation and underlying intellectual property are proprietary to 3030 Technologies.</span>
-      </div>
-      <div class="footer-divider"></div>
-      <div class="footer-copy">
-        <div>&copy; 2025&ndash;26 3030 Technologies</div>
-        <div>All Rights Reserved.</div>
-      </div>
+      <p class="caption" style="text-align: right; max-width: 50ch;">The TOTALFLOW Compliance Intelligence Engine and associated software are proprietary to <a href="https://3030technologies.com" style="color: var(--indigo); text-decoration: none;">3030 Technologies</a>. © 2025–26.</p>
     </div>
   </footer>
 
