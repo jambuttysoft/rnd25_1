@@ -5,7 +5,7 @@ import { readFileSync, writeFileSync, readdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
-import { callText, callVision, extractJson, normalizeAmount } from './lib/openrouter.js';
+import { callText, callVision, extractJson, normalizeAmount } from "./lib/mock-openrouter.js";
 import { loadPolicy, policyAsText, listPolicies, validatePolicy, writePolicy } from './lib/policy.js';
 import { PROMPTS, fillPrompt } from './lib/prompts.js';
 
@@ -81,10 +81,8 @@ app.post('/api/test-connection', async (req, res) => {
 });
 
 
-// ─── POST /api/extract ────────────────────────────────────────────────────────
-// E1: Extract structured fields from a receipt image using the vision model.
 app.post('/api/extract', async (req, res) => {
-  const { base64, mimeType, apiKey: frontKey, model } = req.body;
+  const { base64, mimeType, apiKey: frontKey, model, currency } = req.body;
   const apiKey = frontKey || process.env.OPENROUTER_API_KEY;
   if (!apiKey) return res.json({ error: 'apiKey is required' });
   if (!base64) return res.json({ error: 'base64 image data is required' });
@@ -93,6 +91,22 @@ app.post('/api/extract', async (req, res) => {
     const extraction = extractJson(raw);
     // Normalize amount to float (handles European format "1.249,00")
     extraction.amount = normalizeAmount(extraction.amount);
+    
+    // Normalize currency value
+    if (extraction.currency) {
+      const cur = String(extraction.currency).trim().toUpperCase();
+      if (cur === 'NULL' || cur === 'UNKNOWN' || cur === '—') {
+        extraction.currency = null;
+      } else {
+        extraction.currency = cur;
+      }
+    }
+    
+    // Fallback to settings currency if not detected and not 'Any'
+    if (!extraction.currency && currency && currency !== 'Any') {
+      extraction.currency = currency;
+    }
+    
     res.json({ extraction });
   } catch (e) {
     res.json({ error: e.message });

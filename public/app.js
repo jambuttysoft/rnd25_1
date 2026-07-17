@@ -69,6 +69,9 @@ function restoreTabState(tabName) {
     if (resultEl) {
       resultEl.innerHTML = state.lastResult
     }
+    setExperimentState(tabName, 'complete')
+  } else {
+    setExperimentState(tabName, 'ready')
   }
 
   // Check for config drift
@@ -94,7 +97,42 @@ function restoreTabState(tabName) {
 // ─── Settings ────────────────────────────────────────────────────────────────
 
 // API key persisted in localStorage for convenience (OpenRouter is a research API, not a production secret)
+// API key persisted in localStorage for convenience (OpenRouter is a research API, not a production secret)
 let _apiKey = '';
+
+let _settings = {
+  model: 'google/gemini-2.5-flash',
+  visionModel: 'google/gemini-2.5-flash',
+  apiKey: '',
+  currency: 'Any'
+};
+
+function initSettings() {
+  const saved = localStorage.getItem('psa_settings');
+  if (saved) {
+    try {
+      const s = JSON.parse(saved);
+      if (s.model) _settings.model = s.model;
+      if (s.visionModel) _settings.visionModel = s.visionModel;
+      if (s.apiKey) { _settings.apiKey = s.apiKey; _apiKey = s.apiKey; }
+      if (s.currency) _settings.currency = s.currency;
+    } catch (_) {}
+  }
+}
+initSettings();
+
+async function fetchServerSettings() {
+  try {
+    const res = await fetch('/api/settings');
+    const cfg = await res.json();
+    const saved = localStorage.getItem('psa_settings');
+    if (cfg.model && !saved) _settings.model = cfg.model;
+    if (cfg.visionModel && !saved) _settings.visionModel = cfg.visionModel;
+    if (cfg.apiKey && !_settings.apiKey) { _settings.apiKey = cfg.apiKey; _apiKey = cfg.apiKey; }
+    if (cfg.currency && !saved) _settings.currency = cfg.currency;
+  } catch (_) {}
+}
+fetchServerSettings();
 
 async function loadSettings() {
   const apikeyEl = document.getElementById('s-apikey');
@@ -102,28 +140,29 @@ async function loadSettings() {
   const visionEl = document.getElementById('s-vision-model');
   const currencyEl = document.getElementById('s-currency');
 
-  const saved = localStorage.getItem('psa_settings');
-  if (saved) {
+  if (apikeyEl && modelEl && visionEl) {
+    const saved = localStorage.getItem('psa_settings');
+    if (saved) {
+      try {
+        const s = JSON.parse(saved);
+        if (s.apiKey && s.apiKey.startsWith('sk-')) { _apiKey = s.apiKey; apikeyEl.value = s.apiKey; _settings.apiKey = s.apiKey; }
+        if (s.model) { modelEl.value = s.model; _settings.model = s.model; }
+        if (s.visionModel) { visionEl.value = s.visionModel; _settings.visionModel = s.visionModel; }
+        if (s.currency && currencyEl) { currencyEl.value = s.currency; _settings.currency = s.currency; }
+      } catch (_) {}
+    }
+
     try {
-      const s = JSON.parse(saved);
-      // Only accept apiKey that looks like a real key (starts with sk-)
-      if (s.apiKey && s.apiKey.startsWith('sk-')) { _apiKey = s.apiKey; apikeyEl.value = s.apiKey; }
-      if (s.model) modelEl.value = s.model;
-      if (s.visionModel) visionEl.value = s.visionModel;
-      if (s.currency && currencyEl) currencyEl.value = s.currency;
+      const res = await fetch('/api/settings');
+      const cfg = await res.json();
+      if (cfg.model && !saved) { modelEl.value = cfg.model; _settings.model = cfg.model; }
+      if (cfg.visionModel && !saved) { visionEl.value = cfg.visionModel; _settings.visionModel = cfg.visionModel; }
+      if (cfg.apiKey && !_apiKey) { _apiKey = cfg.apiKey; apikeyEl.value = cfg.apiKey; _settings.apiKey = cfg.apiKey; }
+      if (cfg.currency && currencyEl && !currencyEl.value) { currencyEl.value = cfg.currency; _settings.currency = cfg.currency; }
     } catch (_) {}
+
+    populateStStatusSummary();
   }
-
-  try {
-    const res = await fetch('/api/settings');
-    const cfg = await res.json();
-    if (cfg.model && !saved) modelEl.value = cfg.model;
-    if (cfg.visionModel && !saved) visionEl.value = cfg.visionModel;
-    if (cfg.apiKey && !_apiKey) { _apiKey = cfg.apiKey; apikeyEl.value = cfg.apiKey; }
-    if (cfg.currency && currencyEl && !currencyEl.value) currencyEl.value = cfg.currency;
-  } catch (_) {}
-
-  populateStStatusSummary();
 }
 
 function populateStStatusSummary() {
@@ -171,18 +210,38 @@ function isValidApiKey(k) {
 }
 
 function getSettings() {
-  const inputKey = document.getElementById('s-apikey').value
+  const apikeyEl = document.getElementById('s-apikey');
+  const modelEl = document.getElementById('s-model');
+  const visionEl = document.getElementById('s-vision-model');
+  const currencyEl = document.getElementById('s-currency');
+
+  if (apikeyEl && modelEl && visionEl) {
+    const inputKey = apikeyEl.value;
+    return {
+      model: modelEl.value,
+      visionModel: visionEl.value,
+      apiKey: isValidApiKey(inputKey) ? inputKey : (isValidApiKey(_apiKey) ? _apiKey : ''),
+      currency: currencyEl?.value || 'Any',
+    };
+  }
+
   return {
-    model: document.getElementById('s-model').value,
-    visionModel: document.getElementById('s-vision-model').value,
-    apiKey: isValidApiKey(inputKey) ? inputKey : (isValidApiKey(_apiKey) ? _apiKey : ''),
-    currency: document.getElementById('s-currency')?.value || 'Any',
+    model: _settings.model,
+    visionModel: _settings.visionModel,
+    apiKey: isValidApiKey(_settings.apiKey) ? _settings.apiKey : (isValidApiKey(_apiKey) ? _apiKey : ''),
+    currency: _settings.currency,
   };
 }
 
 async function saveSettings() {
   const { model, visionModel, apiKey, currency } = getSettings();
-  if (apiKey) _apiKey = apiKey;
+  if (apiKey) {
+    _apiKey = apiKey;
+    _settings.apiKey = apiKey;
+  }
+  _settings.model = model;
+  _settings.visionModel = visionModel;
+  _settings.currency = currency;
 
   localStorage.setItem('psa_settings', JSON.stringify({ apiKey, model, visionModel, currency }));
 
@@ -283,16 +342,160 @@ function escHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+function formatReasoningChain(reasoningText) {
+  if (!reasoningText) return '';
+  
+  // Split by steps like "1. ", "2. ", "3. ", "4. ", or "Step 1:", "Step 2:"
+  const steps = [];
+  const regex = /(?:^|\n)(?:\d+[\.\)\:]|Step\s+\d+\:?)\s*/gi;
+  const parts = reasoningText.split(regex);
+  const matches = reasoningText.match(regex);
+  
+  // The first part might be introductory text (before Step 1)
+  let intro = parts[0]?.trim();
+  
+  if (matches && matches.length > 0) {
+    for (let i = 0; i < matches.length; i++) {
+      const stepNum = matches[i].trim().replace(/[\.\)\:]/g, '').replace(/step\s+/i, '');
+      const content = parts[i + 1]?.trim() || '';
+      steps.push({ num: stepNum, content });
+    }
+  } else {
+    // Fallback: if no step numbers are matched, split by lines or paragraphs
+    const paragraphs = reasoningText.split(/\n+/);
+    paragraphs.forEach((p, idx) => {
+      if (p.trim()) {
+        steps.push({ num: idx + 1, content: p.trim() });
+      }
+    });
+    intro = '';
+  }
+
+  // Render as a beautiful vertical timeline/tree structure
+  let html = '<div style="display: flex; flex-direction: column; gap: 14px; padding: 4px; font-family: var(--font-sans); margin-top: 10px;">';
+  if (intro) {
+    html += `<div style="font-size: 13px; color: var(--ink-soft); line-height: 1.5; margin-bottom: 4px; font-style: italic;">${escHtml(intro)}</div>`;
+  }
+  
+  steps.forEach((step, idx) => {
+    // Format bold keys or quotes inside the content (e.g. "**Bold**:" or "Quote:")
+    let formattedContent = escHtml(step.content)
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/`([^`]+)`/g, '<code style="background: rgba(0,0,0,0.04); padding: 2px 4px; border-radius: 3px; font-family: monospace;">$1</code>');
+
+    // Add a left line/node indicator to create a tree/timeline look
+    const isLast = idx === steps.length - 1;
+    html += `
+      <div style="display: flex; gap: 12px; position: relative;">
+        ${!isLast ? `<div style="position: absolute; left: 13px; top: 28px; bottom: -20px; width: 2px; background: rgba(0,0,0,0.06); border-radius: 1px;"></div>` : ''}
+        <div style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--bg-soft); border: 2px solid var(--rule); font-size: 12px; font-weight: 700; color: var(--ink-soft); flex-shrink: 0; z-index: 1;">
+          ${step.num}
+        </div>
+        <div style="flex: 1; padding: 4px 0 8px;">
+          <div style="font-size: 12px; line-height: 1.6; color: var(--ink-soft); font-family: var(--font-sans);">${formattedContent}</div>
+        </div>
+      </div>
+    `;
+  });
+  html += '</div>';
+  return html;
+}
+function formatReasoningChainE3(reasoningText) {
+  if (!reasoningText) return '';
+  
+  // Split by step patterns
+  const steps = [];
+  const regex = /(?:^|\n)(?:\d+[\.\)\:]|Step\s+\d+\:?)\s*/gi;
+  const parts = reasoningText.split(regex);
+  const matches = reasoningText.match(regex);
+  
+  let intro = parts[0]?.trim();
+  
+  if (matches && matches.length > 0) {
+    for (let i = 0; i < matches.length; i++) {
+      const stepNum = matches[i].trim().replace(/[\.\)\:]/g, '').replace(/step\s+/i, '');
+      const rawContent = parts[i + 1]?.trim() || '';
+      
+      // Extract title: often the first sentence or up to a colon
+      let title = `Step ${stepNum}`;
+      let content = rawContent;
+      const colonIdx = rawContent.indexOf(':');
+      const dotIdx = rawContent.indexOf('.');
+      
+      if (colonIdx > 0 && colonIdx < 80) {
+        title = rawContent.substring(0, colonIdx).trim();
+        content = rawContent.substring(colonIdx + 1).trim();
+      } else if (dotIdx > 0 && dotIdx < 80) {
+        title = rawContent.substring(0, dotIdx).trim();
+        content = rawContent.substring(dotIdx + 1).trim();
+      }
+      
+      steps.push({ num: stepNum, title, content });
+    }
+  } else {
+    const paragraphs = reasoningText.split(/\n+/);
+    paragraphs.forEach((p, idx) => {
+      if (p.trim()) {
+        steps.push({ num: idx + 1, title: `Analysis Step ${idx + 1}`, content: p.trim() });
+      }
+    });
+    intro = '';
+  }
+
+  const stepMeta = {
+    "1": { icon: "🔍", color: "#6366f1", title: "Expense Identification" },
+    "2": { icon: "📜", color: "#10b981", title: "Policy Verification" },
+    "3": { icon: "⚖️", color: "#f59e0b", title: "Amount & Limit Check" },
+    "4": { icon: "🏁", color: "#ef4444", title: "Ambiguity & Conflict Assessment" },
+    "5": { icon: "💡", color: "#8b5cf6", title: "Final Synthesis" }
+  };
+
+  let html = '<div style="display: flex; flex-direction: column; gap: 20px; font-family: var(--font-sans); margin-top: 14px; padding: 4px 0;">';
+  
+  if (intro) {
+    html += `<div style="font-size: 13px; color: var(--ink-soft); line-height: 1.5; font-style: italic; margin-bottom: 4px; padding-left: 2px;">${escHtml(intro)}</div>`;
+  }
+  
+  steps.forEach((step, idx) => {
+    const meta = stepMeta[step.num] || { icon: "⚙️", color: "#6366f1", title: step.title };
+    const stepTitle = step.title && step.title.length < 50 ? step.title : meta.title;
+    
+    let formattedContent = escHtml(step.content)
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/`([^`]+)`/g, '<code style="background: rgba(0,0,0,0.04); padding: 2px 4px; border-radius: 3px; font-family: monospace;">$1</code>');
+
+    const isLast = idx === steps.length - 1;
+    
+    html += `
+      <div style="background: #ffffff; border: 1px solid var(--rule); border-left: 4px solid ${meta.color}; border-radius: var(--r-md); padding: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.015); position: relative; transition: all 0.2s ease;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+          <span style="font-size: 18px; flex-shrink: 0; background: ${meta.color}15; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">${meta.icon}</span>
+          <div style="display: flex; flex-direction: column;">
+            <span style="font-weight: 800; font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-faint);">Step ${step.num}</span>
+            <span style="font-weight: 700; font-size: 13px; color: var(--ink);">${escHtml(stepTitle)}</span>
+          </div>
+        </div>
+        <p style="margin: 0; font-size: 13px; line-height: 1.6; color: var(--ink-soft); font-family: var(--font-sans);">${formattedContent}</p>
+        
+        ${!isLast ? `
+          <div style="position: absolute; left: 20px; bottom: -24px; width: 2px; height: 24px; background: ${meta.color}30; z-index: 1;"></div>
+          <div style="position: absolute; left: 9px; bottom: -28px; width: 24px; height: 24px; border-radius: 50%; background: #ffffff; border: 1px solid var(--rule); display: flex; align-items: center; justify-content: center; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${meta.color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        ` : ''}
+      </div>
+      ${!isLast ? '<div style="height: 6px;"></div>' : ''}
+    `;
+  });
+  
+  html += '</div>';
+  return html;
+}
 function buildMetaHtml(opts) {
   const parts = []
   if (opts.cached) parts.unshift(`<span class="cache-badge text-xs text-blue-600 bg-blue-50 border border-blue-200 rounded px-2 py-0.5">📦 Cached from ${escHtml(opts.cached)}</span>`)
-  if (opts.model) parts.push(`<span>Model: ${escHtml(opts.model)}</span>`)
-  if (opts.visionModel) parts.push(`<span>Vision: ${escHtml(opts.visionModel)}</span>`)
-  if (opts.policy) parts.push(`<span>Policy: ${escHtml(opts.policy)}</span>`)
-  if (opts.phase !== undefined && opts.phase !== null && opts.phase !== '') {
-    const phaseNum = (parseInt(opts.phase) || 0) + 1
-    parts.push(`<span>Phase: ${phaseNum}</span>`)
-  }
   if (opts.duration) parts.push(`<span>Time: ${escHtml(opts.duration)}s</span>`)
   if (opts.timestamp) parts.push(`<span class="meta-text">${escHtml(opts.timestamp)}</span>`)
   return parts.length
@@ -348,21 +551,44 @@ async function getFileData(inputId) {
 function updateReceiptBar(fileData) {
   const bar = document.getElementById('receipt-bar')
   const name = document.getElementById('receipt-filename')
+  if (!bar) return
+
   if (fileData && fileData.filename) {
     name.textContent = fileData.filename
+
+    // Add thumbnail if image
+    let thumbContainer = bar.querySelector('.receipt-bar-thumb')
+    if (!thumbContainer) {
+      thumbContainer = document.createElement('div')
+      thumbContainer.className = 'receipt-bar-thumb'
+      thumbContainer.style = 'width: 24px; height: 24px; border-radius: var(--r-sm); overflow: hidden; background: #fff; border: 1px solid var(--rule); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;'
+      thumbContainer.onclick = () => window.APP.showReceiptViewer()
+      bar.firstElementChild.insertBefore(thumbContainer, name)
+    }
+
+    const isImage = fileData.mimeType && fileData.mimeType.startsWith('image/')
+    if (isImage) {
+      const fullSrc = `data:${fileData.mimeType || 'image/jpeg'};base64,${fileData.base64}`
+      thumbContainer.innerHTML = `<img src="${fullSrc}" style="width: 100%; height: 100%; object-fit: cover;">`
+      thumbContainer.style.display = 'flex'
+    } else {
+      thumbContainer.innerHTML = '<span style="font-size: 11px;">📄</span>'
+      thumbContainer.style.display = 'flex'
+    }
+
     bar.classList.remove('hidden')
   } else {
     bar.classList.add('hidden')
     name.textContent = ''
+    const thumbContainer = bar.querySelector('.receipt-bar-thumb')
+    if (thumbContainer) thumbContainer.remove()
   }
 }
 
 function syncReceiptIndicator(tabName) {
-  const tab = document.getElementById(`tab-${tabName}`)
-  if (!tab) return
-  const fileInput = tab.querySelector('input[type="file"]')
+  const fileInput = document.getElementById(`${tabName}-file`)
   if (!fileInput) return
-  let indicator = tab.querySelector('.shared-receipt-indicator')
+  let indicator = fileInput.parentElement.querySelector('.shared-receipt-indicator')
   const shared = window.APP.state.getReceipt()
   if (shared && shared.filename) {
     if (!indicator) {
@@ -445,18 +671,22 @@ function renderExtractionResult(f) {
 
 async function runE1() {
   const fileInput = document.getElementById('e1-file')
-  const file = fileInput.files[0]
-  if (!file) return showError('e1-result', 'Please select a receipt file')
+  const shared = window.APP.state.getReceipt()
+  if (!fileInput.files[0] && !shared) return showError('e1-result', 'Please select a receipt file')
 
   setExperimentState('e1', 'running')
   showResult('e1-result', '<p class="text-sm text-gray-500">Extracting fields...</p>')
 
   try {
-    const { base64, mimeType } = await getFileData('e1-file')
-    const { apiKey, visionModel } = getSettings()
-    const result = await apiPost('/api/extract', { base64, mimeType, apiKey, model: visionModel })
+    const { base64, mimeType, filename } = await getFileData('e1-file')
+    const { apiKey, visionModel, currency } = getSettings()
+    const result = await apiPost('/api/extract', { base64, mimeType, apiKey, model: visionModel, currency })
 
-    ResultsStore.set('e1', { extraction: result.extraction, visionModel, filename: file.name })
+    const filenameVal = filename || fileInput.files[0]?.name || shared?.filename
+    ResultsStore.addResult('e1', {
+      config: { visionModel, filename: filenameVal },
+      result: result.extraction,
+    })
     setExperimentState('e1', 'complete')
     renderE1Result(result.extraction)
   } catch (err) {
@@ -466,30 +696,89 @@ async function runE1() {
 }
 
 function renderE1Result(data) {
-  const fields = [
-    { label: 'Vendor', key: 'vendor' },
-    { label: 'Transaction Date', key: 'date' },
-    { label: 'Amount', key: 'amount' },
-    { label: 'Currency', key: 'currency' },
-    { label: 'Expense Category', key: 'category' },
-    { label: 'Line Items', key: 'lineItems' }
-  ]
-  const html = `<div class="bg-white rounded-lg border border-gray-200 p-6">
-    <table class="w-full text-sm">
-      ${fields.map(f => `<tr class="border-b border-gray-100 last:border-0">
-        <td class="py-2 pr-4 text-gray-500 font-medium w-40">${f.label}</td>
-        <td class="py-2 text-gray-900">${escHtml(data?.[f.key] ?? '—')}</td>
-      </tr>`).join('')}
-    </table>
-  </div>`
+  const isImage = data?.mimeType && data.mimeType.startsWith('image/')
+  
+  const html = `
+    <div style="max-width: 400px; margin: 0 auto; background: #ffffff; border: 1px dashed var(--ink-faint); border-radius: var(--r-md); box-shadow: 0 4px 20px rgba(0,0,0,0.04); padding: 24px; font-family: 'Courier New', Courier, monospace; color: var(--ink);">
+      
+      <!-- Receipt Header -->
+      <div style="text-align: center; margin-bottom: 16px;">
+        <h3 style="margin: 0 0 4px; font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink);">${escHtml(data?.vendor || 'RECEIPT')}</h3>
+        ${data?.vendor_address ? `<p style="margin: 0; font-size: 11px; color: var(--ink-soft); line-height: 1.4;">${escHtml(data.vendor_address)}</p>` : ''}
+        ${data?.vendor_phone ? `<p style="margin: 2px 0 0; font-size: 11px; color: var(--ink-soft);">Tel: ${escHtml(data.vendor_phone)}</p>` : ''}
+        ${data?.vendor_tax_id ? `<p style="margin: 2px 0 0; font-size: 11px; color: var(--ink-soft);">Tax ID: ${escHtml(data.vendor_tax_id)}</p>` : ''}
+      </div>
+
+      <div style="border-top: 1px dashed var(--ink-faint); margin: 12px 0;"></div>
+
+      <!-- Metadata fields -->
+      <div style="font-size: 11px; color: var(--ink-soft); display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin-bottom: 12px;">
+        ${data?.receipt_number ? `<span>REC #:</span><span style="text-align: right; font-weight: 600;">${escHtml(data.receipt_number)}</span>` : ''}
+        <span>DATE:</span><span style="text-align: right;">${escHtml(data?.date || '—')} ${escHtml(data?.time || '')}</span>
+        ${data?.payment_method ? `<span>PAYMENT:</span><span style="text-align: right; text-transform: uppercase;">${escHtml(data.payment_method)}</span>` : ''}
+      </div>
+
+      <div style="border-top: 1px dashed var(--ink-faint); margin: 12px 0;"></div>
+
+      <!-- Line items table -->
+      <table style="width: 100%; font-size: 11px; border-collapse: collapse; margin-bottom: 12px;">
+        <thead>
+          <tr style="border-bottom: 1px dashed var(--ink-faint); font-weight: 700; color: var(--ink-soft);">
+            <th style="text-align: left; padding-bottom: 6px;">ITEM</th>
+            <th style="text-align: right; padding-bottom: 6px; width: 40px;">QTY</th>
+            <th style="text-align: right; padding-bottom: 6px; width: 60px;">PRICE</th>
+            <th style="text-align: right; padding-bottom: 6px; width: 60px;">TOTAL</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${Array.isArray(data?.line_items) && data.line_items.length ? data.line_items.map(item => {
+            const desc = typeof item === 'string' ? item : (item.description || 'Item');
+            const qty = typeof item === 'object' ? (item.quantity ?? 1) : 1;
+            const price = typeof item === 'object' ? (item.unit_price ?? 0) : 0;
+            const total = typeof item === 'object' ? (item.total_price ?? (price * qty)) : 0;
+            return `
+              <tr>
+                <td style="padding: 4px 0; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escHtml(desc)}</td>
+                <td style="padding: 4px 0; text-align: right;">${qty}</td>
+                <td style="padding: 4px 0; text-align: right;">${Number(price).toFixed(2)}</td>
+                <td style="padding: 4px 0; text-align: right; font-weight: 600;">${Number(total).toFixed(2)}</td>
+              </tr>
+            `;
+          }).join('') : '<tr><td colspan="4" style="text-align: center; color: var(--ink-faint); padding: 8px 0;">No items listed</td></tr>'}
+        </tbody>
+      </table>
+
+      <div style="border-top: 1px dashed var(--ink-faint); margin: 12px 0;"></div>
+
+      <!-- Totals block -->
+      <div style="font-size: 12px; display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; margin-bottom: 12px;">
+        ${data?.subtotal != null ? `<span>SUBTOTAL:</span><span style="text-align: right;">${Number(data.subtotal).toFixed(2)}</span>` : ''}
+        ${data?.tax_amount != null ? `<span>TAX/VAT ${data.tax_rate ? `(${data.tax_rate}%)` : ''}:</span><span style="text-align: right;">${Number(data.tax_amount).toFixed(2)}</span>` : ''}
+        ${data?.surcharge != null && Number(data.surcharge) !== 0 ? `<span>SURCHARGE:</span><span style="text-align: right;">${Number(data.surcharge).toFixed(2)}</span>` : ''}
+        ${data?.cash_out != null && Number(data.cash_out) !== 0 ? `<span>CASH OUT:</span><span style="text-align: right;">${Number(data.cash_out).toFixed(2)}</span>` : ''}
+        <span style="font-size: 14px; font-weight: 700; color: var(--ink);">TOTAL:</span>
+        <span style="font-size: 14px; font-weight: 700; color: var(--ink); text-align: right;">${data?.currency || ''} ${Number(data?.amount || 0).toFixed(2)}</span>
+      </div>
+
+      <div style="border-top: 1px dashed var(--ink-faint); margin: 12px 0;"></div>
+
+      <!-- Category footer -->
+      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: 4px;">
+        <span style="color: var(--ink-soft);">CATEGORY:</span>
+        <span style="background: var(--bg-soft); color: var(--ink); border: 1px solid var(--rule); border-radius: var(--r-sm); padding: 2px 8px; font-weight: 600; text-transform: uppercase; font-size: 10px;">${escHtml(data?.category || 'OTHER')}</span>
+      </div>
+    </div>
+  `;
   showResult('e1-result', html)
 }
 
 // ─── E2: No-CoT Verdict ───────────────────────────────────────────────────────
 
 async function runE2() {
-  const btnId = 'e2-btn';
-  setLoading(btnId, true);
+  const fileInput = document.getElementById('e2-file')
+  const shared = window.APP.state.getReceipt()
+  if (!fileInput.files[0] && !shared) return showError('e2-result', 'Please select a receipt file')
+
   showResult('e2-result', '');
   setExperimentState('e2', 'running');
   const startTime = performance.now();
@@ -514,11 +803,34 @@ const { apiKey, visionModel, model, currency } = getSettings();
     const policy = document.getElementById('e2-policy')?.value;
     const phase = document.getElementById('e2-phase')?.value;
     const metaHtml = buildMetaHtml({ model, visionModel, policy, phase, duration });
+    const verdictColors = {
+      justified: {
+        bg: 'background-color: var(--bg-emerald); border-color: #6ee7b7;',
+        text: 'color: var(--emerald-deep);'
+      },
+      suspicious: {
+        bg: 'background-color: #fef2f2; border-color: #fca5a5;',
+        text: 'color: #b91c1c;'
+      },
+      unclear: {
+        bg: 'background-color: var(--bg-warning); border-color: #fcd34d;',
+        text: 'color: var(--amber);'
+      }
+    }[data.verdict] || {
+      bg: 'background-color: var(--bg-soft); border-color: var(--rule);',
+      text: 'color: var(--ink);'
+    };
+
     showResult('e2-result', `
-      <div class="bg-white rounded-lg border border-gray-200 p-4">
-        <div class="flex items-center gap-3 mb-2">${verdictBadge(data.verdict)}</div>
-        <p class="text-sm text-gray-700">${escHtml(data.reason)}</p>
-        ${metaHtml}
+      <div style="border: 1px solid; border-radius: var(--r-md); padding: 20px; margin-bottom: 20px; transition: all 0.2s ease; ${verdictColors.bg}">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+          <span style="font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; ${verdictColors.text}">Verdict Assessment</span>
+          ${verdictBadge(data.verdict)}
+        </div>
+        <p style="margin: 0 0 16px; font-size: 14px; font-weight: 500; line-height: 1.5; color: var(--ink);">${escHtml(data.reason)}</p>
+        <div style="border-top: 1px dashed rgba(0,0,0,0.06); margin-top: 12px; padding-top: 12px;">
+          ${metaHtml}
+        </div>
       </div>`);
     ResultsStore.addResult('e2', {
       config: { model, visionModel, policy, phase: parseInt(phase) },
@@ -540,8 +852,8 @@ const { apiKey, visionModel, model, currency } = getSettings();
 
 async function runE3() {
   const fileInput = document.getElementById('e3-file')
-  const file = fileInput.files[0]
-  if (!file) return showError('e3-result', 'Please select a receipt file')
+  const shared = window.APP.state.getReceipt()
+  if (!fileInput.files[0] && !shared) return showError('e3-result', 'Please select a receipt file')
 
   setExperimentState('e3', 'running')
   showResult('e3-result', '<p class="text-sm text-gray-500">Reasoning through policy...</p>')
@@ -567,16 +879,39 @@ const { apiKey, visionModel, model, currency } = getSettings();
     const policy = document.getElementById('e3-policy')?.value;
     const phase = document.getElementById('e3-phase')?.value;
     const metaHtml = buildMetaHtml({ model, visionModel, policy, phase, duration });
+    const verdictColors = {
+      justified: {
+        bg: 'background-color: var(--bg-emerald); border-color: #6ee7b7;',
+        text: 'color: var(--emerald-deep);'
+      },
+      suspicious: {
+        bg: 'background-color: #fef2f2; border-color: #fca5a5;',
+        text: 'color: #b91c1c;'
+      },
+      unclear: {
+        bg: 'background-color: var(--bg-warning); border-color: #fcd34d;',
+        text: 'color: var(--amber);'
+      }
+    }[data.verdict] || {
+      bg: 'background-color: var(--bg-soft); border-color: var(--rule);',
+      text: 'color: var(--ink);'
+    };
+
     showResult('e3-result', `
-      <div class="bg-white rounded-lg border border-gray-200 p-4 space-y-3">
-        <div class="flex items-center gap-3">${verdictBadge(data.verdict)}</div>
-        <p class="text-sm text-gray-700">${escHtml(data.reason)}</p>
+      <div style="border: 1px solid; border-radius: var(--r-md); padding: 20px; margin-bottom: 20px; transition: all 0.2s ease; ${verdictColors.bg}">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+          <span style="font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; ${verdictColors.text}">Verdict Assessment</span>
+          ${verdictBadge(data.verdict)}
+        </div>
+        <p style="margin: 0 0 16px; font-size: 14px; font-weight: 500; line-height: 1.5; color: var(--ink);">${escHtml(data.reason)}</p>
         ${data.reasoning ? `
-          <details class="text-sm">
+          <details class="text-sm" style="margin-bottom: 16px;">
             <summary class="cursor-pointer text-gray-500 hover:text-gray-700 font-medium">Show reasoning chain</summary>
-            <div class="mt-2 p-3 bg-gray-50 rounded text-gray-700 whitespace-pre-wrap font-mono text-xs leading-relaxed">${escHtml(data.reasoning)}</div>
+            <div class="mt-2 p-4 bg-white border border-gray-100 rounded text-gray-700">${formatReasoningChainE3(data.reasoning)}</div>
           </details>` : ''}
-        ${metaHtml}
+        <div style="border-top: 1px dashed rgba(0,0,0,0.06); margin-top: 12px; padding-top: 12px;">
+          ${metaHtml}
+        </div>
       </div>`);
     ResultsStore.addResult('e3', {
       config: { model, visionModel, policy, phase: parseInt(phase) },
@@ -595,8 +930,10 @@ const { apiKey, visionModel, model, currency } = getSettings();
 // ─── E4: Phase Sensitivity ────────────────────────────────────────────────────
 
 async function runE4() {
-  const btnId = 'e4-btn';
-  setLoading(btnId, true);
+  const fileInput = document.getElementById('e4-file')
+  const shared = window.APP.state.getReceipt()
+  if (!fileInput.files[0] && !shared) return showError('e4-result', 'Please select a receipt file')
+
   setExperimentState('e4', 'running');
   showResult('e4-result', '');
   const startTime = performance.now();
@@ -622,18 +959,27 @@ async function runE4() {
     const policy = document.getElementById('e4-policy')?.value;
     const metaHtml = buildMetaHtml({ model, visionModel, policy, duration });
     showResult('e4-result', `
-      <div class="grid grid-cols-3 gap-4">
-        ${data.phases.map(p => `
-          <div class="bg-white rounded-lg border border-gray-200 p-4">
-            <div class="text-xs text-gray-500 font-semibold mb-2 uppercase tracking-wide">${escHtml(p.phase)}</div>
-            ${verdictBadge(p.verdict)}
-            <p class="text-sm text-gray-600 mt-2">${escHtml(p.reason)}</p>
-            ${p.reasoning ? `
-              <details class="text-xs mt-2">
-                <summary class="cursor-pointer text-gray-400">Reasoning</summary>
-                <div class="mt-1 p-2 bg-gray-50 rounded whitespace-pre-wrap font-mono text-xs leading-relaxed">${escHtml(p.reasoning)}</div>
-              </details>` : ''}
-          </div>`).join('')}
+      <div class="grid grid-cols-3 gap-4" style="margin-bottom: 20px;">
+        ${data.phases.map(p => {
+          const colColors = {
+            justified: { bg: 'background-color: var(--bg-emerald); border-color: #6ee7b7;', text: 'color: var(--emerald-deep);' },
+            suspicious: { bg: 'background-color: #fef2f2; border-color: #fca5a5;', text: 'color: #b91c1c;' },
+            unclear: { bg: 'background-color: var(--bg-warning); border-color: #fcd34d;', text: 'color: var(--amber);' }
+          }[p.verdict] || { bg: 'background-color: var(--bg-soft); border-color: var(--rule);', text: 'color: var(--ink);' };
+
+          return `
+            <div style="border: 1px solid; border-radius: var(--r-md); padding: 16px; transition: all 0.2s ease; ${colColors.bg}">
+              <div class="text-xs font-semibold mb-2 uppercase tracking-wide" style="color: var(--ink-soft);">${escHtml(p.phase)}</div>
+              <div style="margin-bottom: 10px;">${verdictBadge(p.verdict)}</div>
+              <p class="text-sm font-medium" style="margin: 0 0 12px; color: var(--ink);">${escHtml(p.reason)}</p>
+              ${p.reasoning ? `
+                <details class="text-xs mt-2">
+                  <summary class="cursor-pointer text-gray-400">Reasoning</summary>
+                  <div class="mt-1 p-3 bg-white border border-gray-100 rounded text-gray-700">${formatReasoningChain(p.reasoning)}</div>
+                </details>` : ''}
+            </div>
+          `;
+        }).join('')}
       </div>
       ${metaHtml}`);
     ResultsStore.addResult('e4', {
@@ -656,7 +1002,10 @@ async function runE4() {
 // Uses /api/verdict with useCot: true (5-step prompt variant is selected server-side for E5)
 
 async function runE5() {
-  const btnId = 'e5-btn';
+  const fileInput = document.getElementById('e5-file')
+  const shared = window.APP.state.getReceipt()
+  if (!fileInput.files[0] && !shared) return showError('e5-result', 'Please select a receipt file')
+
   setExperimentState('e5', 'running');
   const startTime = performance.now();
   try {
@@ -683,21 +1032,44 @@ async function runE5() {
     const policy = document.getElementById('e5-policy')?.value;
     const phase = document.getElementById('e5-phase')?.value;
     const metaHtml = buildMetaHtml({ model, visionModel, policy, phase, duration });
+    const verdictColors = {
+      justified: {
+        bg: 'background-color: var(--bg-emerald); border-color: #6ee7b7;',
+        text: 'color: var(--emerald-deep);'
+      },
+      suspicious: {
+        bg: 'background-color: #fef2f2; border-color: #fca5a5;',
+        text: 'color: #b91c1c;'
+      },
+      unclear: {
+        bg: 'background-color: var(--bg-warning); border-color: #fcd34d;',
+        text: 'color: var(--amber);'
+      }
+    }[data.verdict] || {
+      bg: 'background-color: var(--bg-soft); border-color: var(--rule);',
+      text: 'color: var(--ink);'
+    };
+
     showResult('e5-result', `
-      <div class="bg-white rounded-lg border border-gray-200 p-4 space-y-3">
-        <div class="flex items-center gap-3">
-          ${verdictBadge(data.verdict)}
-          ${isUnclear
-            ? '<span class="text-xs bg-yellow-100 border border-yellow-300 text-yellow-800 px-2 py-0.5 rounded">✓ Uncertainty expressed</span>'
-            : '<span class="text-xs bg-orange-100 border border-orange-300 text-orange-700 px-2 py-0.5 rounded">⚠ Confident verdict on ambiguous receipt</span>'}
+      <div style="border: 1px solid; border-radius: var(--r-md); padding: 20px; margin-bottom: 20px; transition: all 0.2s ease; ${verdictColors.bg}">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            ${verdictBadge(data.verdict)}
+            ${isUnclear
+              ? '<span class="text-xs bg-green-100 border border-green-300 text-green-800 px-2 py-0.5 rounded font-sans">✓ Uncertainty expressed</span>'
+              : '<span class="text-xs bg-orange-100 border border-orange-300 text-orange-700 px-2 py-0.5 rounded font-sans">⚠ Confident verdict on ambiguous receipt</span>'}
+          </div>
+          <span style="font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; ${verdictColors.text}">Ambiguity Assessment</span>
         </div>
-        <p class="text-sm text-gray-700">${escHtml(data.reason)}</p>
+        <p style="margin: 0 0 16px; font-size: 14px; font-weight: 500; line-height: 1.5; color: var(--ink);">${escHtml(data.reason)}</p>
         ${data.reasoning ? `
-          <details class="text-sm">
-            <summary class="cursor-pointer text-gray-500 font-medium">Show 5-step reasoning</summary>
-            <div class="mt-2 p-3 bg-gray-50 rounded text-gray-700 whitespace-pre-wrap font-mono text-xs leading-relaxed">${escHtml(data.reasoning)}</div>
+          <details class="text-sm" style="margin-bottom: 16px;">
+            <summary class="cursor-pointer text-gray-500 hover:text-gray-700 font-medium">Show 5-step reasoning</summary>
+            <div class="mt-2 p-4 bg-white border border-gray-100 rounded text-gray-700">${formatReasoningChain(data.reasoning)}</div>
           </details>` : ''}
-        ${metaHtml}
+        <div style="border-top: 1px dashed rgba(0,0,0,0.06); margin-top: 12px; padding-top: 12px;">
+          ${metaHtml}
+        </div>
       </div>`);
     ResultsStore.addResult('e5', {
       config: { model, visionModel, policy, phase: parseInt(phase) },
@@ -717,7 +1089,8 @@ async function runE5() {
 
 async function runE6() {
   const fileInput = document.getElementById('e6-file')
-  if (!fileInput.files[0]) return showError('e6-result', 'Please select a receipt file')
+  const shared = window.APP.state.getReceipt()
+  if (!fileInput.files[0] && !shared) return showError('e6-result', 'Please select a receipt file')
 
   setExperimentState('e6', 'running')
   showResult('e6-result', '<p class="text-sm text-gray-500">Testing against all policy variants...</p>')
@@ -746,24 +1119,35 @@ async function runE6() {
     const phase = document.getElementById('e6-phase')?.value;
     const metaHtml = buildMetaHtml({ model, visionModel, phase, duration });
     showResult('e6-result', `
-      <div class="grid grid-cols-3 gap-4">
-        ${data.policies.map(p => `
-          <div class="bg-white rounded-lg border border-gray-200 p-4">
-            <div class="text-xs text-gray-500 font-semibold mb-2 uppercase">${escHtml(p.policy)} policy</div>
-            ${verdictBadge(p.verdict)}
-            ${p.hallucination
-              ? '<span class="ml-1 text-xs bg-orange-100 border border-orange-300 text-orange-700 px-1.5 py-0.5 rounded">⚠ hallucination</span>'
-              : ''}
-            <p class="text-sm text-gray-600 mt-2">${escHtml(p.reason)}</p>
-            ${p.policy_clarity
-              ? `<p class="text-xs text-gray-400 mt-1">Policy assessed as: <strong>${escHtml(p.policy_clarity)}</strong></p>`
-              : ''}
-            ${p.reasoning ? `
-              <details class="text-xs mt-2">
-                <summary class="cursor-pointer text-gray-400">Reasoning</summary>
-                <div class="mt-1 p-2 bg-gray-50 rounded whitespace-pre-wrap font-mono text-xs leading-relaxed">${escHtml(p.reasoning)}</div>
-              </details>` : ''}
-          </div>`).join('')}
+      <div class="grid grid-cols-3 gap-4" style="margin-bottom: 20px;">
+        ${data.policies.map(p => {
+          const colColors = {
+            justified: { bg: 'background-color: var(--bg-emerald); border-color: #6ee7b7;', text: 'color: var(--emerald-deep);' },
+            suspicious: { bg: 'background-color: #fef2f2; border-color: #fca5a5;', text: 'color: #b91c1c;' },
+            unclear: { bg: 'background-color: var(--bg-warning); border-color: #fcd34d;', text: 'color: var(--amber);' }
+          }[p.verdict] || { bg: 'background-color: var(--bg-soft); border-color: var(--rule);', text: 'color: var(--ink);' };
+
+          return `
+            <div style="border: 1px solid; border-radius: var(--r-md); padding: 16px; transition: all 0.2s ease; ${colColors.bg}">
+              <div class="text-xs font-semibold mb-2 uppercase" style="color: var(--ink-soft);">${escHtml(p.policy)} policy</div>
+              <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+                ${verdictBadge(p.verdict)}
+                ${p.hallucination
+                  ? '<span class="text-xs bg-orange-100 border border-orange-300 text-orange-700 px-1.5 py-0.5 rounded font-sans">⚠ hallucination</span>'
+                  : ''}
+              </div>
+              <p class="text-sm font-medium" style="margin: 0 0 12px; color: var(--ink);">${escHtml(p.reason)}</p>
+              ${p.policy_clarity
+                ? `<p class="text-xs mt-1" style="color: var(--ink-mute);">Policy assessed as: <strong>${escHtml(p.policy_clarity)}</strong></p>`
+                : ''}
+              ${p.reasoning ? `
+                <details class="text-xs mt-2">
+                  <summary class="cursor-pointer text-gray-400">Reasoning</summary>
+                  <div class="mt-1 p-3 bg-white border border-gray-100 rounded text-gray-700">${formatReasoningChain(p.reasoning)}</div>
+                </details>` : ''}
+            </div>
+          `;
+        }).join('')}
       </div>
       ${metaHtml}`);
     ResultsStore.set('e6', {
@@ -889,18 +1273,19 @@ function showAnnStatus(kind, message) {
   el.textContent = message;
 }
 
-function getE1CachedExtraction() {
+function getE1CachedExtraction(filename) {
   try {
-    const raw = sessionStorage.getItem('psa_single_results');
-    if (!raw) return null;
-    const map = JSON.parse(raw);
-    const e1 = map['e1'];
-    if (!e1 || !e1.extraction) return null;
-    const shared = window.APP?.state?.getReceipt?.();
-    if (shared && shared.filename && e1.filename && shared.filename !== e1.filename) {
-      return null;
+    const fn = filename || window.APP?.state?.getReceipt?.()?.filename;
+    if (!fn) return null;
+    const results = ResultsStore.getResults('e1');
+    const match = results.slice().reverse().find(r => r.config?.filename === fn);
+    if (match && match.result) return match.result;
+    
+    const single = ResultsStore.get('e1');
+    if (single && (single.filename === fn || single.config?.filename === fn)) {
+      return single.result || single.extraction;
     }
-    return e1.extraction;
+    return null;
   } catch {
     return null;
   }
@@ -939,7 +1324,7 @@ function loadAnnotation() {
     return;
   }
 
-  const e1 = getE1CachedExtraction();
+  const e1 = getE1CachedExtraction(filename);
   if (e1) {
     showAnnStatus('new', `New annotation. Fields pre-populated from cached E1 extraction — review and correct as needed.`);
     document.getElementById('ann-vendor').value = e1.vendor || '';
@@ -970,6 +1355,7 @@ async function saveAnnotation() {
   if (!reason) {
     return showError('ann-result', 'Verdict Reason is required. State the primary reason in one sentence.');
   }
+  const e1 = getE1CachedExtraction(filename);
   const entry = {
     filename,
     vendor: document.getElementById('ann-vendor').value || null,
@@ -981,6 +1367,13 @@ async function saveAnnotation() {
     human_verdict_reason: reason,
     is_ambiguous: document.getElementById('ann-ambiguous').checked,
     notes: document.getElementById('ann-notes').value || '',
+    original_e1_values: e1 ? {
+      vendor: e1.vendor || null,
+      date: e1.date || null,
+      amount: e1.amount || null,
+      currency: e1.currency || null,
+      category: e1.category || null
+    } : null
   };
   try {
     const res = await fetch('/api/annotations', {
@@ -1027,6 +1420,7 @@ const ResultsStore = {
     }
     results.push(entry)
     this._saveAll(results)
+    this.set(experimentId, entry)
     return entry
   },
 
@@ -1243,6 +1637,7 @@ function setExperimentState(prefix, state) {
     if (icon) icon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
     if (btn) setLoading(btn.id, false)
   } else {
+    statusCard.classList.add('status-card--ready')
     const m = readyMap[prefix] || { title: 'Ready to Run', desc: 'Upload a receipt file to begin.' }
     if (title) title.textContent = m.title
     if (desc) desc.textContent = m.desc
@@ -1270,6 +1665,10 @@ function viewRawResponse(prefix) {
   const data = ResultsStore.get(prefix)
   if (!data) return
   showModal('Raw Model Response', `<pre class="text-xs font-mono bg-gray-50 p-4 rounded overflow-x-auto whitespace-pre-wrap">${escHtml(JSON.stringify(data, null, 2))}</pre>`)
+}
+
+function showRawResponse(prefix) {
+  viewRawResponse(prefix)
 }
 
 // ─── Modal System ──────────────────────────────────────────────────────────
@@ -1419,6 +1818,12 @@ window.APP.showReceiptViewer = showReceiptViewer
 window.APP.setExperimentState = setExperimentState
 window.APP.copyResultAsJSON = copyResultAsJSON
 window.APP.viewRawResponse = viewRawResponse
+window.APP.showRawResponse = showRawResponse
+
+window.showRawResponse = showRawResponse
+window.copyResultAsJSON = copyResultAsJSON
+window.exportResultAsJSON = exportResultAsJSON
+window.exportResultAsCSV = exportResultAsCSV
 
 // ─── Modal Content Constants ──────────────────────────────────────────────
 // Research Design modal content for each experiment (E1–E6), Ground Truth, Policy Editor, and Research Configuration
