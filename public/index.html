@@ -3,837 +3,782 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TOTALFLOW Compliance Intelligence Engine</title>
+  <title>Policy Semantic Audit</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 
-  <!-- Header -->
-  <header class="px-6 h-16 flex items-center justify-between" style="background:var(--paper); border-bottom: 1px solid var(--rule);">
-    <div class="flex items-center gap-3">
-      <img src="/jblogo.png" alt="JAMBUTTY" class="h-7 w-auto">
-      <div style="border-left: 1px solid var(--rule-strong); padding-left: 12px;">
-        <h1 class="font-display text-lg leading-none" style="color:var(--ink); font-weight:600;">TOTALFLOW</h1>
-        <p class="font-body text-xs tracking-wide uppercase mt-1" style="color:var(--ink-soft); letter-spacing:0.12em;">Compliance Intelligence Engine</p>
+  <!-- Top header band (gray, brand) -->
+  <header class="app-header">
+    <div class="app-header__inner">
+      <img src="/jblogo.png" alt="Jambutty" class="app-header__logo">
+      <span class="app-header__brand">Jambutty</span>
+      <div class="app-header__title">
+        <h1>Policy Semantic Audit</h1>
+        <p>AI-driven expense justification research platform</p>
       </div>
     </div>
-    <span class="font-mono text-xs" style="color:var(--ink-faint);">v0.4 · R&D</span>
   </header>
 
-  <!-- Tab Navigation -->
-  <nav class="px-6 flex gap-0 overflow-x-auto" style="background:var(--paper); border-bottom: 1px solid var(--rule);">
-    <button class="tab-btn active" data-tab="e1">E1 · OCR</button>
-    <button class="tab-btn" data-tab="e2">E2 · Direct Policy</button>
-    <button class="tab-btn" data-tab="e3">E3 · Structured</button>
-    <button class="tab-btn" data-tab="e4">E4 · Context</button>
-    <button class="tab-btn" data-tab="e5">E5 · Ambiguity</button>
-    <button class="tab-btn" data-tab="e6">E6 · Stress Test</button>
-    <button class="tab-btn" data-tab="annotate">GT · Ground Truth</button>
-    <button class="tab-btn" data-tab="policy-editor">PE · Editor</button>
-    <button class="tab-btn" data-tab="settings">ST · Config</button>
+  <!-- Tab navigation -->
+  <nav class="app-tabs">
+    <div class="app-tabs__inner">
+      <button class="tab-btn active" data-tab="e1">E1: OCR <span class="runs">(1 runs)</span></button>
+      <button class="tab-btn" data-tab="e2">E2: Direct Policy <span class="runs">(0 runs)</span></button>
+      <button class="tab-btn" data-tab="e3">E3: Structured CoT <span class="runs">(0 runs)</span></button>
+      <button class="tab-btn" data-tab="e4">E4: Context <span class="runs">(0 runs)</span></button>
+      <button class="tab-btn" data-tab="e5">E5: Uncertainty <span class="runs">(0 runs)</span></button>
+      <button class="tab-btn" data-tab="e6">E6: Adversarial <span class="runs">(0 runs)</span></button>
+      <button class="tab-btn" data-tab="annotate">Annotate</button>
+      <button class="tab-btn" data-tab="policy-editor">Policy Editor</button>
+      <button class="tab-btn tab-btn--settings" data-tab="settings" title="Settings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>
+        </svg>
+      </button>
+    </div>
   </nav>
 
-  <!-- Tab Panels -->
-  <main class="max-w-3xl mx-auto px-6 py-10">
+  <!-- Main tab panels -->
+  <main>
 
     <!-- Shared Receipt Bar -->
-    <div id="receipt-bar" class="hidden bg-white border border-gray-200 rounded-lg p-3 mb-6 flex items-center gap-3">
-      <span class="text-xs font-medium text-gray-500 uppercase">Receipt:</span>
-      <span id="receipt-filename" class="text-sm text-gray-700 truncate flex-1"></span>
-      <button id="receipt-change-btn" class="text-xs text-blue-600 hover:text-blue-800 font-medium">Change</button>
-      <button id="receipt-clear-btn" class="text-xs text-gray-400 hover:text-red-600 font-medium">✕ Clear</button>
+    <div id="receipt-bar" class="hidden" style="max-width: 1024px; margin: 16px auto 0; padding: 0 24px;">
+      <div style="background: var(--bg-emerald); border: 1px solid #6ee7b7; border-radius: var(--r-md); padding: 10px 14px; display: flex; align-items: center; gap: 12px; font-size: 12px;">
+        <span style="font-weight: 600; color: var(--ink); text-transform: uppercase; letter-spacing: 0.06em;">Receipt:</span>
+        <span id="receipt-filename" style="color: var(--ink-soft); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+        <button id="receipt-change-btn" style="color: var(--indigo); font-weight: 500; background: none; border: none; cursor: pointer;">Change</button>
+        <button id="receipt-clear-btn" style="color: var(--ink-faint); font-weight: 500; background: none; border: none; cursor: pointer;">✕ Clear</button>
+      </div>
     </div>
 
     <!-- E1: OCR Extraction Baseline -->
-    <div id="tab-e1" class="tab-panel">
-      <!-- Section 1: Page header -->
-      <header class="section">
-        <p class="eyebrow">Experiment 01</p>
-        <h1 class="display-1">OCR Extraction Baseline</h1>
-        <p class="body-lg">Upload a receipt to evaluate the model's ability to transform unstructured financial documents into structured accounting data for downstream compliance reasoning.</p>
+    <div id="tab-e1" class="tab-content tab-panel">
+      <header class="page-header">
+        <h2>E1: OCR Extraction Baseline</h2>
+        <p>Upload a receipt to evaluate the model's ability to accurately transform unstructured financial documents into structured accounting data for downstream compliance reasoning.</p>
       </header>
 
-      <!-- Section 2: About -->
-      <section class="section">
-        <p class="eyebrow">About this experiment</p>
-        <p class="body">This experiment forms the foundation of the entire reasoning pipeline. Every subsequent experiment depends on the structured accounting data produced by E1.</p>
-      </section>
+      <div class="action-row">
+        <button onclick="showModal('E1: OCR Extraction Baseline — Research Design', RD_CONTENT_E1)" class="btn-outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="9" y1="13" x2="15" y2="13"/>
+            <line x1="9" y1="17" x2="15" y2="17"/>
+          </svg>
+          Research Design
+        </button>
+        <button onclick="showModal('E1: OCR Extraction Baseline — Practical Example', PE_CONTENT_E1)" class="btn-outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <polygon points="6 4 20 12 6 20 6 4"/>
+          </svg>
+          Practical Example
+        </button>
+      </div>
 
-      <!-- Section 3: Status -->
-      <section class="section">
-        <p class="eyebrow">Status</p>
-        <div id="e1-status" class="card">
-          <div id="e1-status-ready">
-            <p class="body"><span class="status-dot is-ready"></span><strong>Ready to run</strong></p>
-            <p class="caption mt-2">Upload a receipt file to begin the OCR extraction experiment.</p>
-          </div>
-          <div id="e1-status-complete" class="hidden">
-            <p class="body"><span class="status-dot is-complete"></span><strong style="color: var(--justified);">Extraction complete</strong></p>
-            <p class="caption mt-2">Structured accounting data has been extracted.</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Section 4: Controls -->
-      <section class="section">
-        <p class="eyebrow">Controls</p>
-        <div class="card space-y-6">
-          <div>
-            <label class="field-label" for="e1-file">Receipt file</label>
-            <input type="file" id="e1-file" accept="image/*,.pdf" class="field-file">
-          </div>
-
-          <div class="flex flex-wrap items-center gap-3">
-            <button onclick="showModal('E1: OCR Extraction Baseline — Research Design', RD_CONTENT_E1)" class="btn-action">
-              <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <circle cx="8" cy="8" r="6.5"/>
-                <path d="M8 5v3M8 11h.01"/>
-              </svg>
-              Research Design
-            </button>
-            <button onclick="showModal('E1: OCR Extraction Baseline — Practical Example', PE_CONTENT_E1)" class="btn-action">
-              <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <path d="M2.5 2.5h11v8H8l-3 3v-3H2.5z"/>
-                <path d="M5.5 6h5M5.5 8.5h3"/>
-              </svg>
-              Practical Example
-            </button>
-          </div>
-
-          <div>
+      <div class="work-area">
+        <div class="card">
+          <label class="field-label" for="e1-file">Receipt file (JPG, PNG, PDF)</label>
+          <input type="file" id="e1-file" accept="image/*,.pdf" class="file-input">
+          <div style="margin-top: 20px; text-align: center;">
             <button id="e1-btn" data-label="Run Experiment" onclick="runE1()" class="btn-primary">
-              <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                <path d="M4 3l9 5-9 5z"/>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M9 3h6v4l3 3v11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V10l3-3z"/>
+                <line x1="9" y1="3" x2="15" y2="3"/>
+                <line x1="9" y1="14" x2="15" y2="14"/>
               </svg>
               Run Experiment
             </button>
-            <p class="caption mt-3">Execute OCR extraction experiment. Layer 1 of the compliance pipeline.</p>
+            <p class="helper-text">Execute OCR extraction experiment</p>
           </div>
         </div>
-      </section>
+        <div class="info-sidebar">
+          <h3>About this experiment</h3>
+          <p>This experiment establishes a baseline for OCR extraction accuracy by capturing all structured information from real-world receipts without applying any policy reasoning.</p>
+        </div>
+      </div>
 
-      <!-- Section 5: Results -->
-      <section class="section">
-        <p class="eyebrow">Results</p>
-        <div id="e1-result"></div>
-        <div id="e1-actions" class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 hidden">
-          <button onclick="exportResultAsJSON('e1')" class="btn-standard">Download JSON</button>
-          <button onclick="exportResultAsCSV('e1')" class="btn-standard">Download CSV</button>
-          <button onclick="copyResultAsJSON('e1')" class="btn-standard">Copy JSON</button>
-          <button onclick="viewRawResponse('e1')" class="btn-standard">View raw response</button>
-          <span class="caption" style="font-style: italic;">Exports include the structured extraction results.</span>
+      <div class="results-strip">
+        <div id="e1-status" class="status-card status-card--ready">
+          <span class="status-card__icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </span>
+          <div class="status-card__text">
+            <p class="status-card__title">Baseline Complete</p>
+            <p class="status-card__desc" id="e1-status-desc">Upload a receipt file to start the baseline OCR extraction experiment.</p>
+          </div>
+        </div>
+        <div class="actions-card">
+          <h4>Actions</h4>
+          <div class="actions-row" id="e1-actions">
+            <button onclick="exportResultAsJSON('e1')" class="btn-outline">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Download JSON
+            </button>
+            <button onclick="exportResultAsCSV('e1')" class="btn-outline">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+              Download CSV
+            </button>
+            <button onclick="copyResultAsJSON('e1')" class="btn-outline">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              Copy JSON
+            </button>
+            <button onclick="viewRawResponse('e1')" class="btn-outline">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="16 18 22 12 16 6"/>
+                <polyline points="8 6 2 12 8 18"/>
+              </svg>
+              View Raw Response
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-note">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+        <span>Exports include the structured results. Use "View Raw Response" to inspect the unformatted model output.</span>
       </div>
     </div>
 
     <!-- E2: Direct Policy Reasoning Baseline -->
-    <div id="tab-e2" class="tab-panel hidden">
-      <!-- Section 1: Page header -->
-      <header class="section">
-        <p class="eyebrow">Experiment 02</p>
-        <h1 class="display-1">Direct Policy Reasoning Baseline</h1>
-        <p class="body-lg">Upload a receipt to evaluate the model's ability to apply organisational policy directly to structured accounting data without structured reasoning.</p>
+    <div id="tab-e2" class="tab-content tab-panel hidden">
+      <header class="page-header">
+        <h2>E2: Direct Policy Reasoning Baseline</h2>
+        <p>Upload a receipt to evaluate the model's ability to apply organisational policy directly to structured accounting data without structured reasoning.</p>
       </header>
 
-      <!-- Section 2: About -->
-      <section class="section">
-        <p class="eyebrow">About this experiment</p>
-        <p class="body">This experiment evaluates how accurately the model applies organisational policy directly to structured accounting data without structured reasoning or reasoning guidance. The results establish the baseline against which all subsequent reasoning experiments are compared.</p>
-      </section>
+      <div class="action-row">
+        <button onclick="showModal('E2: Direct Policy Reasoning Baseline — Research Design', RD_CONTENT_E2)" class="btn-outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="9" y1="13" x2="15" y2="13"/>
+            <line x1="9" y1="17" x2="15" y2="17"/>
+          </svg>
+          Research Design
+        </button>
+        <button onclick="showModal('E2: Direct Policy Reasoning Baseline — Practical Example', PE_CONTENT_E2)" class="btn-outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <polygon points="6 4 20 12 6 20 6 4"/>
+          </svg>
+          Practical Example
+        </button>
+      </div>
 
-      <!-- Section 3: Status -->
-      <section class="section">
-        <p class="eyebrow">Status</p>
-        <div id="e2-status" class="card">
-          <div id="e2-status-ready">
-            <p class="body"><span class="status-dot is-ready"></span><strong>Ready to run</strong></p>
-            <p class="caption mt-2">Upload a receipt file and select the required policy variant and project phase to begin the direct policy reasoning baseline experiment.</p>
-          </div>
-          <div id="e2-status-complete" class="hidden">
-            <p class="body"><span class="status-dot is-complete"></span><strong style="color: var(--justified);">Experiment complete</strong></p>
-            <p class="caption mt-2">Direct policy reasoning baseline successfully executed.</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Section 4: Controls -->
-      <section class="section">
-        <p class="eyebrow">Controls</p>
-        <div class="card space-y-6">
-          <div>
-            <label class="field-label" for="e2-file">Receipt file</label>
-            <input type="file" id="e2-file" accept="image/*,.pdf" class="field-file">
-          </div>
-          <div class="grid grid-cols-2 gap-4">
+      <div class="work-area">
+        <div class="card">
+          <label class="field-label" for="e2-file">Receipt file (JPG, PNG, PDF)</label>
+          <input type="file" id="e2-file" accept="image/*,.pdf" class="file-input">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px;">
             <div>
-              <label class="field-label" for="e2-policy">Policy Variant</label>
-              <select id="e2-policy" class="field-input">
+              <label class="field-label" for="e2-policy" style="font-weight: 500; color: var(--ink-soft);">Policy Variant</label>
+              <select id="e2-policy" class="field-select">
                 <option value="clear">Clear policy</option>
                 <option value="vague">Vague policy</option>
                 <option value="contradictory">Contradictory policy</option>
               </select>
             </div>
             <div>
-              <label class="field-label" for="e2-phase">Project Phase</label>
-              <select id="e2-phase" class="field-input">
+              <label class="field-label" for="e2-phase" style="font-weight: 500; color: var(--ink-soft);">Project Phase</label>
+              <select id="e2-phase" class="field-select">
                 <option value="0">Phase 1: Infrastructure Setup</option>
                 <option value="1" selected>Phase 2: Experimentation</option>
                 <option value="2">Phase 3: Evaluation &amp; Documentation</option>
               </select>
             </div>
           </div>
-          <div class="flex flex-wrap items-center gap-3">
-            <button onclick="showModal('E2: Direct Policy Reasoning Baseline — Research Design', RD_CONTENT_E2)" class="btn-action">
-              <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <circle cx="8" cy="8" r="6.5"/>
-                <path d="M8 5v3M8 11h.01"/>
-              </svg>
-              Research Design
-            </button>
-            <button onclick="showModal('E2: Direct Policy Reasoning Baseline — Practical Example', PE_CONTENT_E2)" class="btn-action">
-              <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <path d="M2.5 2.5h11v8H8l-3 3v-3H2.5z"/>
-                <path d="M5.5 6h5M5.5 8.5h3"/>
-              </svg>
-              Practical Example
-            </button>
-          </div>
-          <div>
+          <div style="margin-top: 20px; text-align: center;">
             <button id="e2-btn" data-label="Run Experiment" onclick="runE2()" class="btn-primary">
-              <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                <path d="M4 3l9 5-9 5z"/>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M9 3h6v4l3 3v11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V10l3-3z"/>
+                <line x1="9" y1="3" x2="15" y2="3"/>
+                <line x1="9" y1="14" x2="15" y2="14"/>
               </svg>
               Run Experiment
             </button>
-            <p class="caption mt-3">Execute direct policy reasoning experiment. Layer 3 of the compliance pipeline.</p>
+            <p class="helper-text">Execute direct policy reasoning experiment</p>
           </div>
         </div>
-      </section>
-
-      <!-- Section 5: Results -->
-      <section class="section">
-        <p class="eyebrow">Results</p>
-        <div id="e2-result"></div>
-        <div id="e2-actions" class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 hidden">
-          <button onclick="exportResultAsJSON('e2')" class="btn-standard">Download JSON</button>
-          <button onclick="exportResultAsCSV('e2')" class="btn-standard">Download CSV</button>
-          <button onclick="copyResultAsJSON('e2')" class="btn-standard">Copy JSON</button>
-          <button onclick="viewRawResponse('e2')" class="btn-standard">View raw response</button>
-          <span class="caption" style="font-style: italic;">Exports include the structured results.</span>
+        <div class="info-sidebar">
+          <h3>About this experiment</h3>
+          <p>This experiment evaluates how accurately the model applies organisational policy directly to structured accounting data without structured reasoning or reasoning guidance.</p>
         </div>
-      </section>
+      </div>
+
+      <div class="results-strip">
+        <div id="e2-status" class="status-card status-card--ready">
+          <span class="status-card__icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </span>
+          <div class="status-card__text">
+            <p class="status-card__title">Ready to Run</p>
+            <p class="status-card__desc">Upload a receipt file and select the policy variant and project phase to begin.</p>
+          </div>
+        </div>
+        <div class="actions-card">
+          <h4>Actions</h4>
+          <div class="actions-row" id="e2-actions">
+            <button onclick="exportResultAsJSON('e2')" class="btn-outline">Download JSON</button>
+            <button onclick="exportResultAsCSV('e2')" class="btn-outline">Download CSV</button>
+            <button onclick="copyResultAsJSON('e2')" class="btn-outline">Copy JSON</button>
+            <button onclick="viewRawResponse('e2')" class="btn-outline">View Raw</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-note">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+        <span>Exports include the structured results. Use "View Raw Response" to inspect the unformatted model output.</span>
+      </div>
     </div>
 
-    <!-- E3: Structured Reasoning -->
-    <div id="tab-e3" class="tab-panel hidden">
-      <!-- Section 1: Page header -->
-      <header class="section">
-        <p class="eyebrow">Experiment 03</p>
-        <h1 class="display-1">Structured Reasoning Evaluation</h1>
-        <p class="body-lg">Upload a receipt to evaluate whether structured reasoning improves policy interpretation, justification quality and compliance decision accuracy compared with direct policy application.</p>
+    <!-- E3: Structured Reasoning Evaluation -->
+    <div id="tab-e3" class="tab-content tab-panel hidden">
+      <header class="page-header">
+        <h2>E3: Structured Reasoning Evaluation</h2>
+        <p>Upload a receipt to evaluate whether structured reasoning improves policy interpretation, justification quality and compliance decision accuracy compared with direct policy application.</p>
       </header>
 
-      <!-- Section 2: About -->
-      <section class="section">
-        <p class="eyebrow">About this experiment</p>
-        <p class="body">This experiment evaluates whether introducing a structured reasoning process enables the model to produce more accurate, transparent and auditable compliance decisions than direct policy application alone.</p>
-      </section>
+      <div class="action-row">
+        <button onclick="showModal('E3: Structured Reasoning Evaluation — Research Design', RD_CONTENT_E3)" class="btn-outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          Research Design
+        </button>
+        <button onclick="showModal('E3: Structured Reasoning Evaluation — Practical Example', PE_CONTENT_E3)" class="btn-outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+          Practical Example
+        </button>
+      </div>
 
-      <!-- Section 3: Status -->
-      <section class="section">
-        <p class="eyebrow">Status</p>
-        <div id="e3-status" class="card">
-          <div id="e3-status-ready">
-            <p class="body"><span class="status-dot is-ready"></span><strong>Ready to run</strong></p>
-            <p class="caption mt-2">Upload a receipt file and select the required policy variant and project phase to begin the structured reasoning evaluation.</p>
-          </div>
-          <div id="e3-status-complete" class="hidden">
-            <p class="body"><span class="status-dot is-complete"></span><strong style="color: var(--justified);">Structured reasoning complete</strong></p>
-            <p class="caption mt-2">The transaction has been evaluated using a structured, policy-grounded reasoning process.</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Section 4: Controls -->
-      <section class="section">
-        <p class="eyebrow">Controls</p>
-        <div class="card space-y-6">
-          <div>
-            <label class="field-label" for="e3-file">Receipt file</label>
-            <input type="file" id="e3-file" accept="image/*,.pdf" class="field-file">
-          </div>
-          <div class="grid grid-cols-2 gap-4">
+      <div class="work-area">
+        <div class="card">
+          <label class="field-label" for="e3-file">Receipt file (JPG, PNG, PDF)</label>
+          <input type="file" id="e3-file" accept="image/*,.pdf" class="file-input">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px;">
             <div>
-              <label class="field-label" for="e3-policy">Policy Variant</label>
-              <select id="e3-policy" class="field-input">
+              <label class="field-label" for="e3-policy" style="font-weight: 500; color: var(--ink-soft);">Policy Variant</label>
+              <select id="e3-policy" class="field-select">
                 <option value="clear">Clear policy</option>
                 <option value="vague">Vague policy</option>
                 <option value="contradictory">Contradictory policy</option>
               </select>
             </div>
             <div>
-              <label class="field-label" for="e3-phase">Project Phase</label>
-              <select id="e3-phase" class="field-input">
+              <label class="field-label" for="e3-phase" style="font-weight: 500; color: var(--ink-soft);">Project Phase</label>
+              <select id="e3-phase" class="field-select">
                 <option value="0">Phase 1: Infrastructure Setup</option>
                 <option value="1" selected>Phase 2: Experimentation</option>
                 <option value="2">Phase 3: Evaluation &amp; Documentation</option>
               </select>
             </div>
           </div>
-          <div class="flex flex-wrap items-center gap-3">
-            <button onclick="showModal('E3: Structured Reasoning Evaluation — Research Design', RD_CONTENT_E3)" class="btn-action">
-              <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <circle cx="8" cy="8" r="6.5"/>
-                <path d="M8 5v3M8 11h.01"/>
-              </svg>
-              Research Design
-            </button>
-            <button onclick="showModal('E3: Structured Reasoning Evaluation — Practical Example', PE_CONTENT_E3)" class="btn-action">
-              <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <path d="M2.5 2.5h11v8H8l-3 3v-3H2.5z"/>
-                <path d="M5.5 6h5M5.5 8.5h3"/>
-              </svg>
-              Practical Example
-            </button>
-          </div>
-          <div>
-            <button id="e3-btn" data-label="Reason &amp; Verdict" onclick="runE3()" class="btn-primary">
-              <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                <path d="M4 3l9 5-9 5z"/>
-              </svg>
+          <div style="margin-top: 20px; text-align: center;">
+            <button id="e3-btn" data-label="Reason & Verdict" onclick="runE3()" class="btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
               Reason &amp; Verdict
             </button>
-            <p class="caption mt-3">Execute structured reasoning evaluation. Compare with the E2 baseline.</p>
+            <p class="helper-text">Execute structured reasoning evaluation</p>
           </div>
         </div>
-      </section>
-
-      <!-- Section 5: Results -->
-      <section class="section">
-        <p class="eyebrow">Results</p>
-        <div id="e3-result"></div>
-        <div id="e3-actions" class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 hidden">
-          <button onclick="exportResultAsJSON('e3')" class="btn-standard">Download JSON</button>
-          <button onclick="exportResultAsCSV('e3')" class="btn-standard">Download CSV</button>
+        <div class="info-sidebar">
+          <h3>About this experiment</h3>
+          <p>This experiment evaluates whether introducing a structured reasoning process enables the model to produce more accurate, transparent and auditable compliance decisions than direct policy application alone.</p>
         </div>
-      </section>
+      </div>
+
+      <div class="results-strip">
+        <div id="e3-status" class="status-card status-card--ready">
+          <span class="status-card__icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          <div class="status-card__text">
+            <p class="status-card__title">Ready to Run</p>
+            <p class="status-card__desc">Upload a receipt file and select the policy variant and project phase to begin.</p>
+          </div>
+        </div>
+        <div class="actions-card">
+          <h4>Actions</h4>
+          <div class="actions-row" id="e3-actions">
+            <button onclick="exportResultAsJSON('e3')" class="btn-outline">Download JSON</button>
+            <button onclick="exportResultAsCSV('e3')" class="btn-outline">Download CSV</button>
+            <button onclick="copyResultAsJSON('e3')" class="btn-outline">Copy JSON</button>
+            <button onclick="viewRawResponse('e3')" class="btn-outline">View Raw</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-note">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span>Exports include the structured reasoning result, applicable policy input, identified policy clause, final verdict and model response.</span>
+      </div>
     </div>
 
     <!-- E4: Context-Sensitive Reasoning -->
-    <div id="tab-e4" class="tab-panel hidden">
-      <!-- Section 1: Page header -->
-      <header class="section">
-        <p class="eyebrow">Experiment 04</p>
-        <h1 class="display-1">Context-Sensitive Reasoning</h1>
-        <p class="body-lg">Upload a receipt to evaluate whether the model's compliance decision changes appropriately when the same transaction is tested across different project phases.</p>
+    <div id="tab-e4" class="tab-content tab-panel hidden">
+      <header class="page-header">
+        <h2>E4: Context-Sensitive Reasoning</h2>
+        <p>Upload a receipt to evaluate whether the model's compliance decision changes appropriately when the same transaction is tested across different project phases.</p>
       </header>
 
-      <!-- Section 2: About -->
-      <section class="section">
-        <p class="eyebrow">About this experiment</p>
-        <p class="body">This experiment evaluates whether the model changes its compliance decision appropriately when the same transaction is tested across different project phases. The receipt and policy remain unchanged, allowing project context to be isolated as the experimental variable.</p>
-      </section>
+      <div class="action-row">
+        <button onclick="showModal('E4: Context-Sensitive Reasoning — Research Design', RD_CONTENT_E4)" class="btn-outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Research Design
+        </button>
+        <button onclick="showModal('E4: Context-Sensitive Reasoning — Practical Example', PE_CONTENT_E4)" class="btn-outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+          Practical Example
+        </button>
+      </div>
 
-      <!-- Section 3: Status -->
-      <section class="section">
-        <p class="eyebrow">Status</p>
-        <div id="e4-status" class="card">
-          <div id="e4-status-ready">
-            <p class="body"><span class="status-dot is-ready"></span><strong>Ready to run</strong></p>
-            <p class="caption mt-2">Upload a receipt file and select the required policy variant to begin the context-sensitive reasoning experiment across all project phases.</p>
-          </div>
-          <div id="e4-status-complete" class="hidden">
-            <p class="body"><span class="status-dot is-complete"></span><strong style="color: var(--justified);">Context evaluation complete</strong></p>
-            <p class="caption mt-2">The transaction has been evaluated across every defined project phase and the context-sensitive results have been recorded.</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Section 4: Controls -->
-      <section class="section">
-        <p class="eyebrow">Controls</p>
-        <div class="card space-y-6">
-          <div>
-            <label class="field-label" for="e4-file">Receipt file</label>
-            <input type="file" id="e4-file" accept="image/*,.pdf" class="field-file">
-          </div>
-          <div>
-            <label class="field-label" for="e4-policy">Policy Variant</label>
-            <select id="e4-policy" class="field-input">
+      <div class="work-area">
+        <div class="card">
+          <label class="field-label" for="e4-file">Receipt file (JPG, PNG, PDF)</label>
+          <input type="file" id="e4-file" accept="image/*,.pdf" class="file-input">
+          <div style="margin-top: 16px;">
+            <label class="field-label" for="e4-policy" style="font-weight: 500; color: var(--ink-soft);">Policy Variant</label>
+            <select id="e4-policy" class="field-select">
               <option value="clear">Clear policy</option>
               <option value="vague">Vague policy</option>
               <option value="contradictory">Contradictory policy</option>
             </select>
           </div>
-          <div class="flex flex-wrap items-center gap-3">
-            <button onclick="showModal('E4: Context-Sensitive Reasoning — Research Design', RD_CONTENT_E4)" class="btn-action">
-              <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <circle cx="8" cy="8" r="6.5"/>
-                <path d="M8 5v3M8 11h.01"/>
-              </svg>
-              Research Design
-            </button>
-            <button onclick="showModal('E4: Context-Sensitive Reasoning — Practical Example', PE_CONTENT_E4)" class="btn-action">
-              <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <path d="M2.5 2.5h11v8H8l-3 3v-3H2.5z"/>
-                <path d="M5.5 6h5M5.5 8.5h3"/>
-              </svg>
-              Practical Example
-            </button>
-          </div>
-          <div>
+          <div style="margin-top: 20px; text-align: center;">
             <button id="e4-btn" data-label="Test All Phases" onclick="runE4()" class="btn-primary">
-              <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                <path d="M4 3l9 5-9 5z"/>
-              </svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
               Test All Phases
             </button>
-            <p class="caption mt-3">Evaluate the same transaction across every project phase. Phase context varies, policy stays fixed.</p>
+            <p class="helper-text">Evaluate the same transaction across every project phase</p>
           </div>
         </div>
-      </section>
-
-      <!-- Section 5: Results -->
-      <section class="section">
-        <p class="eyebrow">Results</p>
-        <div id="e4-result"></div>
-        <div id="e4-actions" class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 hidden">
-          <button onclick="exportResultAsJSON('e4')" class="btn-standard">Download JSON</button>
-          <button onclick="copyResultAsJSON('e4')" class="btn-standard">Copy JSON</button>
-          <button onclick="viewRawResponse('e4')" class="btn-standard">View raw response</button>
-          <span class="caption" style="font-style: italic;">Exports include the structured results for every project phase.</span>
+        <div class="info-sidebar">
+          <h3>About this experiment</h3>
+          <p>This experiment evaluates whether the model changes its compliance decision appropriately when the same transaction is tested across different project phases, with the receipt and policy held constant.</p>
         </div>
-      </section>
+      </div>
+
+      <div class="results-strip">
+        <div id="e4-status" class="status-card status-card--ready">
+          <span class="status-card__icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          <div class="status-card__text">
+            <p class="status-card__title">Ready to Run</p>
+            <p class="status-card__desc">Upload a receipt file and select the policy variant to test across all phases.</p>
+          </div>
+        </div>
+        <div class="actions-card">
+          <h4>Actions</h4>
+          <div class="actions-row" id="e4-actions">
+            <button onclick="exportResultAsJSON('e4')" class="btn-outline">Download JSON</button>
+            <button onclick="copyResultAsJSON('e4')" class="btn-outline">Copy JSON</button>
+            <button onclick="viewRawResponse('e4')" class="btn-outline">View Raw</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-note">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span>Exports include the structured results for every project phase.</span>
+      </div>
     </div>
 
     <!-- E5: Ambiguity & Uncertainty Handling -->
-    <div id="tab-e5" class="tab-panel hidden">
-      <!-- Section 1: Page header -->
-      <header class="section">
-        <p class="eyebrow">Experiment 05</p>
-        <h1 class="display-1">Ambiguity &amp; Uncertainty Handling</h1>
-        <p class="body-lg">Upload an ambiguous receipt to evaluate whether the model recognises uncertainty or forces a confident compliance verdict.</p>
+    <div id="tab-e5" class="tab-content tab-panel hidden">
+      <header class="page-header">
+        <h2>E5: Ambiguity &amp; Uncertainty Handling</h2>
+        <p>Upload an ambiguous receipt to evaluate whether the model recognises uncertainty or forces a confident compliance verdict.</p>
       </header>
 
-      <!-- Section 2: About -->
-      <section class="section">
-        <p class="eyebrow">About this experiment</p>
-        <p class="body">This experiment evaluates whether the model can recognise ambiguity, missing information and conflicting evidence when assessing a transaction against organisational policy. The objective is to determine whether the model expresses appropriate uncertainty, identifies the information required for resolution and avoids producing an unsupported confident verdict.</p>
-      </section>
+      <div class="action-row">
+        <button onclick="showModal('E5: Ambiguity & Uncertainty Handling — Research Design', RD_CONTENT_E5)" class="btn-outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Research Design
+        </button>
+        <button onclick="showModal('E5: Ambiguity & Uncertainty Handling — Practical Example', PE_CONTENT_E5)" class="btn-outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+          Practical Example
+        </button>
+      </div>
 
-      <!-- Section 3: Status -->
-      <section class="section">
-        <p class="eyebrow">Status</p>
-        <div id="e5-status" class="card">
-          <div id="e5-status-ready">
-            <p class="body"><span class="status-dot is-ready"></span><strong>Ready to run</strong></p>
-            <p class="caption mt-2">Upload an ambiguous receipt and select the required policy variant and project phase to begin the uncertainty-handling experiment.</p>
-          </div>
-          <div id="e5-status-complete" class="hidden">
-            <p class="body"><span class="status-dot is-complete"></span><strong style="color: var(--justified);">Ambiguity analysis complete</strong></p>
-            <p class="caption mt-2">The transaction has been evaluated for ambiguity, missing evidence and confidence appropriateness.</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Section 4: Controls -->
-      <section class="section">
-        <p class="eyebrow">Controls</p>
-        <div class="card space-y-6">
-          <div>
-            <label class="field-label" for="e5-file">Receipt file</label>
-            <input type="file" id="e5-file" accept="image/*,.pdf" class="field-file">
-          </div>
-          <div class="grid grid-cols-2 gap-4">
+      <div class="work-area">
+        <div class="card">
+          <label class="field-label" for="e5-file">Receipt file (JPG, PNG, PDF)</label>
+          <input type="file" id="e5-file" accept="image/*,.pdf" class="file-input">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px;">
             <div>
-              <label class="field-label" for="e5-policy">Policy Variant</label>
-              <select id="e5-policy" class="field-input">
+              <label class="field-label" for="e5-policy" style="font-weight: 500; color: var(--ink-soft);">Policy Variant</label>
+              <select id="e5-policy" class="field-select">
                 <option value="clear">Clear policy</option>
                 <option value="vague">Vague policy</option>
                 <option value="contradictory">Contradictory policy</option>
               </select>
             </div>
             <div>
-              <label class="field-label" for="e5-phase">Project Phase</label>
-              <select id="e5-phase" class="field-input">
+              <label class="field-label" for="e5-phase" style="font-weight: 500; color: var(--ink-soft);">Project Phase</label>
+              <select id="e5-phase" class="field-select">
                 <option value="0">Phase 1: Infrastructure Setup</option>
                 <option value="1" selected>Phase 2: Experimentation</option>
                 <option value="2">Phase 3: Evaluation &amp; Documentation</option>
               </select>
             </div>
           </div>
-          <div class="flex flex-wrap items-center gap-3">
-            <button onclick="showModal('E5: Ambiguity &amp; Uncertainty Handling — Research Design', RD_CONTENT_E5)" class="btn-action">
-              <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <circle cx="8" cy="8" r="6.5"/>
-                <path d="M8 5v3M8 11h.01"/>
-              </svg>
-              Research Design
-            </button>
-            <button onclick="showModal('E5: Ambiguity &amp; Uncertainty Handling — Practical Example', PE_CONTENT_E5)" class="btn-action">
-              <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <path d="M2.5 2.5h11v8H8l-3 3v-3H2.5z"/>
-                <path d="M5.5 6h5M5.5 8.5h3"/>
-              </svg>
-              Practical Example
-            </button>
-          </div>
-          <div>
+          <div style="margin-top: 20px; text-align: center;">
             <button id="e5-btn" data-label="Analyse Ambiguity" onclick="runE5()" class="btn-primary">
-              <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                <path d="M4 3l9 5-9 5z"/>
-              </svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
               Analyse Ambiguity
             </button>
-            <p class="caption mt-3">Evaluate uncertainty and determine whether the available evidence supports a reliable verdict.</p>
+            <p class="helper-text">Evaluate uncertainty and determine whether the available evidence supports a reliable verdict</p>
           </div>
         </div>
-      </section>
-
-      <!-- Section 5: Results -->
-      <section class="section">
-        <p class="eyebrow">Results</p>
-        <div id="e5-result"></div>
-        <div id="e5-actions" class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 hidden">
-          <button onclick="exportResultAsJSON('e5')" class="btn-standard">Download JSON</button>
-          <button onclick="exportResultAsCSV('e5')" class="btn-standard">Download CSV</button>
-          <button onclick="copyResultAsJSON('e5')" class="btn-standard">Copy JSON</button>
+        <div class="info-sidebar">
+          <h3>About this experiment</h3>
+          <p>This experiment evaluates whether the model can recognise ambiguity, missing information and conflicting evidence, and respond with an appropriately qualified conclusion rather than a forced confident verdict.</p>
         </div>
-      </section>
+      </div>
+
+      <div class="results-strip">
+        <div id="e5-status" class="status-card status-card--ready">
+          <span class="status-card__icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          <div class="status-card__text">
+            <p class="status-card__title">Ready to Run</p>
+            <p class="status-card__desc">Upload an ambiguous receipt and select the policy variant and project phase to begin.</p>
+          </div>
+        </div>
+        <div class="actions-card">
+          <h4>Actions</h4>
+          <div class="actions-row" id="e5-actions">
+            <button onclick="exportResultAsJSON('e5')" class="btn-outline">Download JSON</button>
+            <button onclick="exportResultAsCSV('e5')" class="btn-outline">Download CSV</button>
+            <button onclick="copyResultAsJSON('e5')" class="btn-outline">Copy JSON</button>
+            <button onclick="viewRawResponse('e5')" class="btn-outline">View Raw</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-note">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span>Exports include the transaction input, applicable policy, identified ambiguities, missing information, confidence assessment, recommended next action and model response.</span>
+      </div>
     </div>
 
     <!-- E6: Adversarial Policy Stress Test -->
-    <div id="tab-e6" class="tab-panel hidden">
-      <!-- Section 1: Page header -->
-      <header class="section">
-        <p class="eyebrow">Experiment 06</p>
-        <h1 class="display-1">Adversarial Policy Stress Test</h1>
-        <p class="body-lg">Upload a receipt to evaluate the model's verdicts across all three policy variants simultaneously and identify when policy ambiguity or contradiction causes unreliable reasoning.</p>
+    <div id="tab-e6" class="tab-content tab-panel hidden">
+      <header class="page-header">
+        <h2>E6: Adversarial Policy Stress Test</h2>
+        <p>Upload a receipt to evaluate the model's verdicts across all three policy variants simultaneously and identify when policy ambiguity or contradiction causes unreliable reasoning.</p>
       </header>
 
-      <!-- Section 2: About -->
-      <section class="section">
-        <p class="eyebrow">About this experiment</p>
-        <p class="body">This experiment evaluates whether the model can distinguish between clear, vague and contradictory organisational policies when assessing the same transaction. The system runs the same receipt and project-phase context against all three policy variants and compares the resulting verdicts, reasoning quality, confidence and policy-clarity assessment.</p>
-      </section>
+      <div class="action-row">
+        <button onclick="showModal('E6: Adversarial Policy Stress Test — Research Design', RD_CONTENT_E6)" class="btn-outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Research Design
+        </button>
+        <button onclick="showModal('E6: Adversarial Policy Stress Test — Practical Example', PE_CONTENT_E6)" class="btn-outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+          Practical Example
+        </button>
+      </div>
 
-      <!-- Section 3: Status -->
-      <section class="section">
-        <p class="eyebrow">Status</p>
-        <div id="e6-status" class="card">
-          <div id="e6-status-ready">
-            <p class="body"><span class="status-dot is-ready"></span><strong>Ready to run</strong></p>
-            <p class="caption mt-2">Upload a receipt file and select the required project phase to test the transaction against all three policy variants.</p>
-          </div>
-          <div id="e6-status-complete" class="hidden">
-            <p class="body"><span class="status-dot is-complete"></span><strong style="color: var(--justified);">Policy stress test complete</strong></p>
-            <p class="caption mt-2">The transaction has been evaluated against the clear, vague and contradictory policy variants.</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Section 4: Controls -->
-      <section class="section">
-        <p class="eyebrow">Controls</p>
-        <div class="card space-y-6">
-          <div>
-            <label class="field-label" for="e6-file">Receipt file</label>
-            <input type="file" id="e6-file" accept="image/*,.pdf" class="field-file">
-          </div>
-          <div>
-            <label class="field-label" for="e6-phase">Project Phase</label>
-            <select id="e6-phase" class="field-input">
+      <div class="work-area">
+        <div class="card">
+          <label class="field-label" for="e6-file">Receipt file (JPG, PNG, PDF)</label>
+          <input type="file" id="e6-file" accept="image/*,.pdf" class="file-input">
+          <div style="margin-top: 16px;">
+            <label class="field-label" for="e6-phase" style="font-weight: 500; color: var(--ink-soft);">Project Phase</label>
+            <select id="e6-phase" class="field-select">
               <option value="0">Phase 1: Infrastructure Setup</option>
               <option value="1" selected>Phase 2: Experimentation</option>
               <option value="2">Phase 3: Evaluation &amp; Documentation</option>
             </select>
           </div>
-          <div class="flex flex-wrap items-center gap-3">
-            <button onclick="showModal('E6: Adversarial Policy Stress Test — Research Design', RD_CONTENT_E6)" class="btn-action">
-              <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <circle cx="8" cy="8" r="6.5"/>
-                <path d="M8 5v3M8 11h.01"/>
-              </svg>
-              Research Design
-            </button>
-            <button onclick="showModal('E6: Adversarial Policy Stress Test — Practical Example', PE_CONTENT_E6)" class="btn-action">
-              <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <path d="M2.5 2.5h11v8H8l-3 3v-3H2.5z"/>
-                <path d="M5.5 6h5M5.5 8.5h3"/>
-              </svg>
-              Practical Example
-            </button>
-          </div>
-          <div>
+          <div style="margin-top: 20px; text-align: center;">
             <button id="e6-btn" data-label="Test All Policies" onclick="runE6()" class="btn-primary">
-              <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                <path d="M4 3l9 5-9 5z"/>
-              </svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
               Test All Policies
             </button>
-            <p class="caption mt-3">Evaluate the receipt against all policy variants simultaneously. Policy context varies, phase stays fixed.</p>
+            <p class="helper-text">Evaluate the receipt against all policy variants simultaneously</p>
           </div>
         </div>
-      </section>
-
-      <!-- Section 5: Results -->
-      <section class="section">
-        <p class="eyebrow">Results</p>
-        <div id="e6-result"></div>
-        <div id="e6-actions" class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 hidden">
-          <button onclick="exportResultAsJSON('e6')" class="btn-standard">Download JSON</button>
-          <button onclick="exportResultAsCSV('e6')" class="btn-standard">Download CSV</button>
-          <button onclick="copyResultAsJSON('e6')" class="btn-standard">Copy JSON</button>
-          <button onclick="viewRawResponse('e6')" class="btn-standard">View raw response</button>
-          <span class="caption" style="font-style: italic;">Exports include the transaction input, project phase, each policy variant, policy-clarity assessment, verdict, confidence, supporting reason and raw model response.</span>
+        <div class="info-sidebar">
+          <h3>About this experiment</h3>
+          <p>This experiment evaluates whether the model can distinguish between clear, vague and contradictory organisational policies when assessing the same transaction, surfacing where policy quality drives unreliable reasoning.</p>
         </div>
-      </section>
+      </div>
+
+      <div class="results-strip">
+        <div id="e6-status" class="status-card status-card--ready">
+          <span class="status-card__icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          <div class="status-card__text">
+            <p class="status-card__title">Ready to Run</p>
+            <p class="status-card__desc">Upload a receipt and select the project phase to test against all three policy variants.</p>
+          </div>
+        </div>
+        <div class="actions-card">
+          <h4>Actions</h4>
+          <div class="actions-row" id="e6-actions">
+            <button onclick="exportResultAsJSON('e6')" class="btn-outline">Download JSON</button>
+            <button onclick="exportResultAsCSV('e6')" class="btn-outline">Download CSV</button>
+            <button onclick="copyResultAsJSON('e6')" class="btn-outline">Copy JSON</button>
+            <button onclick="viewRawResponse('e6')" class="btn-outline">View Raw</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-note">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span>Exports include the transaction input, project phase, each policy variant, policy-clarity assessment, verdict, confidence, supporting reason and raw model response.</span>
+      </div>
     </div>
 
     <!-- GT: Ground Truth Annotation -->
-    <div id="tab-annotate" class="tab-panel hidden">
-      <header class="section">
-        <p class="eyebrow">Research Support Module</p>
-        <h1 class="display-1">Ground Truth Annotation</h1>
-        <p class="body-lg">Record the human-reviewed compliance outcome for each receipt. These annotations form the reference dataset used to evaluate the accuracy, consistency and reliability of the Compliance Intelligence Engine across all experiments.</p>
+    <div id="tab-annotate" class="tab-content tab-panel hidden">
+      <header class="page-header">
+        <h2>Ground Truth Annotation</h2>
+        <p>Annotate each receipt with a human verdict, supporting reason and ambiguity flag. Fields pre-populate from the E1 extraction where available.</p>
       </header>
 
-      <section class="section">
-        <p class="eyebrow">Methodology</p>
-        <p class="body">Annotate each receipt with a human verdict, supporting reason and ambiguity flag. Fields pre-populate from the E1 extraction where available; you can correct any value. The reviewer identity and timestamp are recorded automatically on save.</p>
-      </section>
+      <div class="action-row">
+        <button onclick="showModal('Ground Truth Annotation — Research Design', RD_CONTENT_GT)" class="btn-outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Research Design
+        </button>
+        <button onclick="showModal('Ground Truth Annotation — Practical Example', PE_CONTENT_GT)" class="btn-outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+          Practical Example
+        </button>
+      </div>
 
-      <section class="section">
-        <p class="eyebrow">Receipt navigation</p>
-        <div class="card space-y-4">
-          <div class="flex flex-wrap items-center gap-3">
-            <select id="ann-file" class="field-input" style="max-width: 320px;" onchange="loadAnnotation()">
+      <div class="work-area">
+        <div class="card" style="display: flex; align-items: center; justify-content: center; min-height: 320px; padding: 16px;">
+          <img id="ann-preview" src="" alt="Receipt preview" class="hidden" style="max-width: 100%; max-height: 400px; object-fit: contain;">
+          <p id="ann-preview-empty" style="color: var(--ink-faint); font-size: 13px;">Select a receipt to preview</p>
+        </div>
+        <div class="card">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+            <select id="ann-file" class="field-select" onchange="loadAnnotation()" style="flex: 1;">
               <option value="">Select a receipt...</option>
             </select>
-            <button onclick="prevReceipt()" class="btn-action">← Previous</button>
-            <button onclick="nextReceipt()" class="btn-action">Next →</button>
-            <span id="ann-counter" class="caption mono">—</span>
+            <button onclick="prevReceipt()" class="btn-ghost">←</button>
+            <button onclick="nextReceipt()" class="btn-ghost">→</button>
           </div>
-          <div id="ann-status" class="hidden p-3 rounded text-sm" style="border: 1px solid var(--rule);"></div>
-        </div>
-      </section>
+          <span id="ann-counter" class="caption" style="font-family: var(--font-mono); display: block; margin-bottom: 16px;">—</span>
 
-      <section class="section">
-        <p class="eyebrow">Workspace</p>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div class="card flex items-center justify-center min-h-[300px]">
-            <img id="ann-preview" src="" alt="Receipt preview" class="max-w-full max-h-[400px] object-contain hidden">
-            <p id="ann-preview-empty" class="caption">Select a receipt to preview</p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div>
+              <label class="field-label" for="ann-vendor">Vendor</label>
+              <input id="ann-vendor" type="text" class="field-input-text">
+            </div>
+            <div>
+              <label class="field-label" for="ann-date">Date (YYYY-MM-DD)</label>
+              <input id="ann-date" type="text" placeholder="2025-10-07" class="field-input-text">
+            </div>
+            <div>
+              <label class="field-label" for="ann-amount">Amount</label>
+              <input id="ann-amount" type="number" step="0.01" class="field-input-text">
+            </div>
+            <div>
+              <label class="field-label" for="ann-currency">Currency</label>
+              <input id="ann-currency" type="text" placeholder="EUR" class="field-input-text">
+            </div>
           </div>
-          <div class="space-y-4">
-            <div class="card space-y-4">
-              <p class="eyebrow" style="margin-bottom: 0;">Extracted information</p>
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="field-label" for="ann-vendor">Vendor</label>
-                  <input id="ann-vendor" type="text" class="field-input">
-                </div>
-                <div>
-                  <label class="field-label" for="ann-date">Date</label>
-                  <input id="ann-date" type="text" placeholder="2025-10-07" class="field-input">
-                </div>
-                <div>
-                  <label class="field-label" for="ann-amount">Amount</label>
-                  <input id="ann-amount" type="number" step="0.01" class="field-input">
-                </div>
-                <div>
-                  <label class="field-label" for="ann-currency">Currency</label>
-                  <input id="ann-currency" type="text" placeholder="EUR" class="field-input">
-                </div>
-              </div>
-              <div>
-                <label class="field-label" for="ann-category">Category</label>
-                <select id="ann-category" class="field-input">
-                  <option value="equipment">Equipment</option>
-                  <option value="software">Software</option>
-                  <option value="travel">Travel</option>
-                  <option value="meals">Meals</option>
-                  <option value="services">Services</option>
-                  <option value="supplies">Supplies</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-            </div>
-            <div class="card space-y-3">
-              <p class="eyebrow" style="margin-bottom: 0;">Human compliance assessment</p>
-              <div>
-                <label class="field-label" for="ann-verdict">Human verdict</label>
-                <select id="ann-verdict" class="field-input">
-                  <option value="justified">Justified</option>
-                  <option value="suspicious">Suspicious</option>
-                  <option value="unclear">Unclear</option>
-                </select>
-              </div>
-              <div>
-                <label class="field-label" for="ann-reason">Verdict reason</label>
-                <input id="ann-reason" type="text" placeholder="State the primary reason in one clear sentence." class="field-input">
-                <p class="caption mt-1">Required. State the primary reason for the human verdict in one clear sentence.</p>
-              </div>
-              <div class="flex items-center gap-2">
-                <input type="checkbox" id="ann-ambiguous" class="rounded">
-                <label for="ann-ambiguous" class="caption">Mark as ambiguous — reasonable reviewers could reach different conclusions</label>
-              </div>
-              <div>
-                <label class="field-label" for="ann-notes">Reviewer notes</label>
-                <input id="ann-notes" type="text" placeholder="Record document-quality issues, unusual formatting, missing evidence..." class="field-input">
-              </div>
-            </div>
-            <button onclick="saveAnnotation()" class="btn-primary">
-              <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M3 3h7l3 3v7H3z"/><path d="M5 5h3v3H5z"/></svg>
-              Save annotation
-            </button>
-            <div id="ann-result" class="caption"></div>
-            <div class="flex gap-3 pt-2">
-              <button onclick="showModal('GT: Ground Truth Annotation — Research Design', RD_CONTENT_GT)" class="btn-action">
-                <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v3M8 11h.01"/></svg>
-                Research Design
-              </button>
-              <button onclick="showModal('GT: Ground Truth Annotation — Practical Example', PE_CONTENT_GT)" class="btn-action">
-                <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 2.5h11v8H8l-3 3v-3H2.5z"/><path d="M5.5 6h5M5.5 8.5h3"/></svg>
-                Practical Example
-              </button>
-            </div>
+          <div style="margin-bottom: 16px;">
+            <label class="field-label" for="ann-category">Category</label>
+            <select id="ann-category" class="field-select">
+              <option value="equipment">Equipment</option>
+              <option value="software">Software</option>
+              <option value="travel">Travel</option>
+              <option value="meals">Meals</option>
+              <option value="services">Services</option>
+              <option value="supplies">Supplies</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div id="ann-status" class="hidden" style="background: var(--bg-soft); border-radius: var(--r-sm); padding: 8px 12px; font-size: 12px; color: var(--ink-soft); margin-bottom: 12px;"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom: 20px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div>
+            <label class="field-label" for="ann-verdict">Human verdict</label>
+            <select id="ann-verdict" class="field-select">
+              <option value="justified">Justified</option>
+              <option value="suspicious">Suspicious</option>
+              <option value="unclear">Unclear</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" for="ann-reason">Verdict reason</label>
+            <input id="ann-reason" type="text" placeholder="State the primary reason in one clear sentence." class="field-input-text">
           </div>
         </div>
-      </section>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+          <input type="checkbox" id="ann-ambiguous" style="accent-color: var(--indigo);">
+          <label for="ann-ambiguous" style="font-size: 12px; color: var(--ink-soft);">Mark as ambiguous — reasonable reviewers could reach different conclusions</label>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <label class="field-label" for="ann-notes">Reviewer notes</label>
+          <input id="ann-notes" type="text" placeholder="Record document-quality issues, unusual formatting, missing evidence..." class="field-input-text">
+        </div>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <button onclick="saveAnnotation()" class="btn-primary">Save annotation</button>
+          <span id="ann-result" class="caption"></span>
+        </div>
+      </div>
     </div>
 
-    <!-- Policy Editor (Research Support Module) -->
-    <div id="tab-policy-editor" class="tab-panel hidden">
-      <header class="section">
-        <p class="eyebrow">Research Support Module</p>
-        <h1 class="display-1">Policy Editor</h1>
-        <p class="body-lg">Define and maintain the controlled organisational policy variants used across Experiments E2–E6. Saved policy changes apply to future experiment runs and are versioned to preserve research reproducibility.</p>
-        <div class="mt-4">
-          <button onclick="showModal('PE: Policy Editor — Research Design', RD_CONTENT_PE)" class="btn-action">
-            <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v3M8 11h.01"/></svg>
-            Research Design
-          </button>
-          <button onclick="showModal('PE: Policy Editor — Practical Example', PE_CONTENT_PE)" class="btn-action">
-            <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 2.5h11v8H8l-3 3v-3H2.5z"/><path d="M5.5 6h5M5.5 8.5h3"/></svg>
-            Practical Example
-          </button>
-        </div>
+    <!-- PE: Policy Editor -->
+    <div id="tab-policy-editor" class="tab-content tab-panel hidden">
+      <header class="page-header">
+        <h2>Policy Editor</h2>
+        <p>Define and maintain the controlled organisational policy variants used across Experiments E2–E6. Saved policy changes apply to future experiment runs and are versioned to preserve research reproducibility.</p>
       </header>
 
-      <section class="section">
-        <p class="eyebrow">Research control</p>
-        <div class="card" style="background: var(--paper-soft); border-color: var(--rule);">
-          <p class="body"><strong>Research control notice:</strong> Saved policy changes apply only to future experiment runs. Existing experiment results remain linked to the exact policy version used when they were generated. Every change requires a reason and increments the version.</p>
-        </div>
-      </section>
+      <div class="action-row">
+        <button onclick="showModal('PE: Policy Editor — Research Design', RD_CONTENT_PE)" class="btn-outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Research Design
+        </button>
+        <button onclick="showModal('PE: Policy Editor — Practical Example', PE_CONTENT_PE)" class="btn-outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+          Practical Example
+        </button>
+      </div>
 
-      <section class="section">
-        <p class="eyebrow">Status</p>
-        <div id="pe-status-summary" class="card grid grid-cols-2 gap-3 text-sm">
-          <div><span class="caption">Status:</span> <span id="pe-status-label" class="font-medium" style="color: var(--justified);">Saved</span></div>
-          <div><span class="caption">Version:</span> <span id="pe-version-label" class="mono">v1.0</span></div>
-          <div><span class="caption">Last updated:</span> <span id="pe-updated-label" class="caption">—</span></div>
-          <div><span class="caption">Used in runs:</span> <span id="pe-runs-label" class="caption">—</span></div>
-        </div>
-      </section>
+      <div class="research-notice">
+        <strong>Research control notice:</strong> Saved policy changes apply only to future experiment runs. Existing experiment results remain linked to the exact policy version used when they were generated. Every change requires a reason and increments the version.
+      </div>
 
-      <section class="section">
-        <p class="eyebrow">Editor</p>
-        <div class="card space-y-4">
+      <div class="card" style="margin-bottom: 20px;">
+        <h4 style="font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 12px;">Status</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; font-size: 12px;">
+          <div><span style="color: var(--ink-mute);">Status:</span> <span id="pe-status-label" style="color: var(--emerald); font-weight: 700;">Saved</span></div>
+          <div><span style="color: var(--ink-mute);">Version:</span> <span id="pe-version-label" style="font-family: var(--font-mono); font-weight: 500;">v1.0</span></div>
+          <div><span style="color: var(--ink-mute);">Last updated:</span> <span id="pe-updated-label" style="color: var(--ink-mute);">—</span></div>
+          <div><span style="color: var(--ink-mute);">Used in runs:</span> <span id="pe-runs-label" style="color: var(--ink-mute);">—</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
           <div>
             <label class="field-label" for="pe-policy">Policy variant</label>
-            <select id="pe-policy" class="field-input" onchange="loadPolicyEditor()">
+            <select id="pe-policy" class="field-select" onchange="loadPolicyEditor()">
               <option value="clear">Clear Policy</option>
               <option value="vague">Vague Policy</option>
               <option value="contradictory">Contradictory Policy</option>
             </select>
           </div>
-          <div id="pe-e6-warning" class="hidden p-3 rounded text-sm" style="background: #F2EAD2; border: 1px solid var(--unclear); color: var(--unclear);">
-            ⚠ Internal contradictions are intentional for Experiment E6. Removing them will break the hallucination detection test.
-          </div>
-          <div>
-            <label class="field-label" for="pe-project-name">Project name</label>
-            <input id="pe-project-name" type="text" class="field-input">
-          </div>
-          <div>
-            <label class="field-label" for="pe-description">Description</label>
-            <textarea id="pe-description" rows="2" class="field-input"></textarea>
-          </div>
-          <div id="pe-phases" class="space-y-3">
-            <!-- 3 phase blocks generated by JS -->
-          </div>
           <div>
             <label class="field-label" for="pe-change-reason">Reason for change</label>
-            <input id="pe-change-reason" type="text" placeholder="Explain why this policy version is being changed" class="field-input">
-            <p class="caption mt-1">Required before saving. Explains what research input has been modified.</p>
+            <input id="pe-change-reason" type="text" placeholder="Explain why this policy version is being changed" class="field-input-text">
           </div>
-          <div class="flex gap-3 pt-2">
-            <button id="pe-save-btn" onclick="savePolicy()" class="btn-primary">
-              <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M3 3h7l3 3v7H3z"/><path d="M5 5h3v3H5z"/></svg>
-              Save policy
-            </button>
-            <button id="pe-reset-btn" onclick="resetPolicy()" class="btn-action">Reset to default</button>
-            <button id="pe-clear-btn" onclick="clearPolicyForm()" class="btn-action">Clear form</button>
-          </div>
-          <div id="pe-result" class="caption"></div>
         </div>
-      </section>
+        <div id="pe-e6-warning" class="hidden" style="background: var(--bg-warning); border: 1px solid #fcd34d; color: var(--amber); border-radius: var(--r-sm); padding: 10px 14px; font-size: 12px; margin-bottom: 12px;">
+          ⚠ Internal contradictions are intentional for Experiment E6. Removing them will break the hallucination detection test.
+        </div>
+        <div style="margin-bottom: 12px;">
+          <label class="field-label" for="pe-project-name">Project name</label>
+          <input id="pe-project-name" type="text" class="field-input-text">
+        </div>
+        <div style="margin-bottom: 12px;">
+          <label class="field-label" for="pe-description">Description</label>
+          <textarea id="pe-description" rows="2" class="field-input-text"></textarea>
+        </div>
+        <div id="pe-phases" class="space-y-3" style="margin-bottom: 16px;">
+          <!-- 3 phase blocks generated by JS -->
+        </div>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <button id="pe-save-btn" onclick="savePolicy()" class="btn-primary">Save policy</button>
+          <button id="pe-reset-btn" onclick="resetPolicy()" class="btn-ghost">Reset to default</button>
+          <button id="pe-clear-btn" onclick="clearPolicyForm()" class="btn-ghost">Clear form</button>
+          <span id="pe-result" class="caption"></span>
+        </div>
+      </div>
     </div>
 
-    <!-- Settings -->
-    <div id="tab-settings" class="tab-panel hidden">
-      <header class="section">
-        <p class="eyebrow">Research Support Module</p>
-        <h1 class="display-1">Research Configuration</h1>
-        <p class="body-lg">Configure the model-provider connection, experiment models, currency treatment and saved-result controls used across the research programme. Changes apply to future experiment runs and are recorded to preserve reproducibility.</p>
-        <div class="mt-4 flex flex-wrap gap-3">
-          <button onclick="showModal('ST: Research Configuration — Research Design', RD_CONTENT_ST)" class="btn-action">
-            <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v3M8 11h.01"/></svg>
-            Research Design
-          </button>
-          <button onclick="showModal('ST: Research Configuration — Practical Example', PE_CONTENT_ST)" class="btn-action">
-            <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 2.5h11v8H8l-3 3v-3H2.5z"/><path d="M5.5 6h5M5.5 8.5h3"/></svg>
-            Practical Example
-          </button>
-          <button onclick="showPageGuide()" class="btn-action">
-            <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 2.5h11v8H8l-3 3v-3H2.5z"/><circle cx="5" cy="6" r="0.5" fill="currentColor"/><circle cx="7" cy="6" r="0.5" fill="currentColor"/></svg>
-            Page guide
-          </button>
-        </div>
+    <!-- ST: Research Configuration -->
+    <div id="tab-settings" class="tab-content tab-panel hidden">
+      <header class="page-header">
+        <h2>Research Configuration</h2>
+        <p>Configure the model-provider connection, experiment models, currency treatment and saved-result controls used across the research programme. Changes apply to future experiment runs and are recorded to preserve reproducibility.</p>
       </header>
 
-      <section class="section">
-        <p class="eyebrow">Research control</p>
-        <div class="card" style="background: var(--paper-soft); border-color: var(--rule);">
-          <p class="body"><strong>Research control notice:</strong> Configuration changes apply only to future experiment runs. Every completed run retains the exact model, provider, currency treatment and configuration version used when it was executed.</p>
-        </div>
-      </section>
+      <div class="action-row">
+        <button onclick="showModal('ST: Research Configuration — Research Design', RD_CONTENT_ST)" class="btn-outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Research Design
+        </button>
+        <button onclick="showModal('ST: Research Configuration — Practical Example', PE_CONTENT_ST)" class="btn-outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+          Practical Example
+        </button>
+        <button onclick="showPageGuide()" class="btn-ghost">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          Page Guide
+        </button>
+      </div>
 
-      <section class="section">
-        <p class="eyebrow">Status</p>
-        <div id="st-status-summary" class="card grid grid-cols-2 gap-3 text-sm">
-          <div><span class="caption">Status:</span> <span id="st-status-label" class="font-medium" style="color: var(--justified);">Saved</span></div>
-          <div><span class="caption">Connection:</span> <span id="st-connection-label" class="caption">—</span></div>
-          <div><span class="caption">Vision model:</span> <span id="st-vision-label" class="caption">—</span></div>
-          <div><span class="caption">Reasoning model:</span> <span id="st-model-label" class="caption">—</span></div>
-        </div>
-      </section>
+      <div class="research-notice">
+        <strong>Research control notice:</strong> Configuration changes apply only to future experiment runs. Every completed run retains the exact model, provider, currency treatment and configuration version used when it was executed.
+      </div>
 
-      <section class="section">
-        <p class="eyebrow">Experiment configuration</p>
-        <div class="card space-y-4">
+      <div class="card" style="margin-bottom: 20px;">
+        <h4 style="font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 12px;">Status</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; font-size: 12px;">
+          <div><span style="color: var(--ink-mute);">Status:</span> <span id="st-status-label" style="color: var(--emerald); font-weight: 700;">Saved</span></div>
+          <div><span style="color: var(--ink-mute);">Connection:</span> <span id="st-connection-label" style="color: var(--ink-mute);">—</span></div>
+          <div><span style="color: var(--ink-mute);">Vision model:</span> <span id="st-vision-label" style="color: var(--ink-mute);">—</span></div>
+          <div><span style="color: var(--ink-mute);">Reasoning model:</span> <span id="st-model-label" style="color: var(--ink-mute);">—</span></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom: 20px;">
+        <h4 style="font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 12px;">Experiment Configuration</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
           <div>
             <label class="field-label" for="s-apikey">OpenRouter API key</label>
-            <input type="password" id="s-apikey" placeholder="sk-or-..." autocomplete="off" class="field-input font-mono" style="font-family: var(--font-mono);">
-            <p class="caption mt-1">Stored in browser local storage. Re-entry may be required after switching browsers or clearing data.</p>
+            <input type="password" id="s-apikey" placeholder="sk-or-..." autocomplete="off" class="field-input-text" style="font-family: var(--font-mono);">
+            <p class="caption" style="margin-top: 4px;">Stored in browser local storage. Re-entry may be required after switching browsers or clearing data.</p>
           </div>
           <div>
             <label class="field-label" for="s-vision-model">Vision model (OCR — Layer 1)</label>
-            <select id="s-vision-model" class="field-input">
+            <select id="s-vision-model" class="field-select">
               <option value="google/gemini-2.5-flash">google/gemini-2.5-flash (recommended)</option>
               <option value="qwen/qwen2.5-vl-72b-instruct">qwen/qwen2.5-vl-72b-instruct</option>
               <option value="anthropic/claude-sonnet-4-5">anthropic/claude-sonnet-4-5</option>
@@ -841,53 +786,61 @@
           </div>
           <div>
             <label class="field-label" for="s-model">Reasoning model (Verdict — Layer 3)</label>
-            <select id="s-model" class="field-input">
+            <select id="s-model" class="field-select">
               <option value="google/gemini-2.5-flash">google/gemini-2.5-flash (recommended)</option>
               <option value="qwen/qwen2.5-72b-instruct">qwen/qwen2.5-72b-instruct</option>
               <option value="mistralai/mixtral-8x7b-instruct">mistralai/mixtral-8x7b-instruct</option>
               <option value="anthropic/claude-sonnet-4-5">anthropic/claude-sonnet-4-5</option>
             </select>
-            <p class="caption mt-1">Switch models to compare behavior across E2–E6.</p>
           </div>
           <div>
             <label class="field-label" for="s-currency">Currency override</label>
-            <select id="s-currency" class="field-input">
+            <select id="s-currency" class="field-select">
               <option value="Any">Any (use receipt currency)</option>
               <option value="AUD">AUD</option>
               <option value="USD">USD</option>
               <option value="EUR">EUR</option>
             </select>
-            <p class="caption mt-1">Force a specific currency for verdict prompts, or "Any" to use what the receipt shows.</p>
           </div>
-          <div class="flex gap-3 pt-2">
-            <button onclick="saveSettings()" class="btn-primary">
-              <svg class="icon" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M3 3h7l3 3v7H3z"/><path d="M5 5h3v3H5z"/></svg>
-              Save settings
-            </button>
-            <button onclick="testConnection()" class="btn-action">Test connection</button>
-          </div>
-          <div id="settings-result" class="caption"></div>
         </div>
-      </section>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <button onclick="saveSettings()" class="btn-primary">Save settings</button>
+          <button onclick="testConnection()" class="btn-ghost">Test connection</button>
+          <span id="settings-result" class="caption"></span>
+        </div>
+      </div>
 
-      <section class="section">
-        <p class="eyebrow">Saved results</p>
-        <div class="card flex flex-wrap gap-3">
-          <button onclick="exportResultAsJSON(null)" class="btn-action">Export all results (JSON)</button>
-          <button onclick="if(confirm('Clear all saved experiment results?')){ResultsStore.clearAllResults();showResult('settings-result','<span class=&quot;text-gray-600&quot;>✓ Results cleared</span>');}" class="btn-action">Clear all results</button>
+      <div class="card">
+        <h4 style="font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 12px;">Saved results</h4>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <button onclick="exportResultAsJSON(null)" class="btn-ghost">Export all results (JSON)</button>
+          <button onclick="if(confirm('Clear all saved experiment results?')){ResultsStore.clearAllResults();showResult('settings-result','<span style=&quot;color: var(--ink-mute);&quot;>✓ Results cleared</span>');}" class="btn-ghost">Clear all results</button>
         </div>
-      </section>
+      </div>
     </div>
 
   </main>
 
-  <!-- Footer (sticky bottom) -->
-  <footer class="sticky bottom-0 h-12 px-6 flex items-center justify-between z-40" style="background:var(--paper); border-top: 1px solid var(--rule);">
-    <div class="flex items-center gap-3">
-      <img src="/tflogo.png" alt="TOTAL FLOW" class="h-4 w-auto" style="opacity: 0.7;">
-      <p class="font-body text-xs" style="color:var(--ink-soft);">© 2026 JAMBUTTY · R&D Research Platform</p>
+  <!-- Footer (3-column, NOT sticky) -->
+  <footer class="app-footer">
+    <div class="app-footer__inner">
+      <div class="footer-brand">
+        <img src="/tflogo.png" alt="TOTAL FLOW">
+        <span class="name">TOTALFLOW</span>
+      </div>
+      <div class="footer-divider"></div>
+      <div class="footer-info">
+        <span class="title">TOTALFLOW Compliance Intelligence Engine</span>
+        <span class="title">Semantic Reasoning Research Platform</span>
+        <span class="accent">Research Programme &bull; R&amp;D 2025</span>
+        <span class="disclaimer">The TOTALFLOW Compliance Intelligence Engine, associated software, research methodologies, documentation and underlying intellectual property are proprietary to 3030 Technologies.</span>
+      </div>
+      <div class="footer-divider"></div>
+      <div class="footer-copy">
+        <div>&copy; 2025&ndash;26 3030 Technologies</div>
+        <div>All Rights Reserved.</div>
+      </div>
     </div>
-    <p class="font-mono text-xs hidden md:block" style="color:var(--ink-faint);">Reproducibility: every run records model, policy, version</p>
   </footer>
 
   <script src="/app.js"></script>
