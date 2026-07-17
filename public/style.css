@@ -473,10 +473,10 @@ body.modal-open { overflow: hidden; }
 .shared-receipt-thumb:hover { border-color: var(--indigo); transform: scale(1.08); }
 
 /* Verdict badges */
-.verdict-justified { background: var(--bg-emerald); border: 1px solid var(--emerald); color: var(--emerald-deep); }
-.verdict-suspicious { background: #fef2f2; border: 1px solid #fca5a5; color: #b91c1c; }
-.verdict-unclear    { background: var(--bg-warning); border: 1px solid #fcd34d; color: var(--amber); }
-.verdict-error      { background: var(--bg-soft); border: 1px solid #cbd5e1; color: var(--ink-soft); }
+.verdict-justified { background: #10b981 !important; color: #ffffff !important; border: none !important; border-radius: 4px; padding: 2px 8px; }
+.verdict-suspicious { background: #ef4444 !important; color: #ffffff !important; border: none !important; border-radius: 4px; padding: 2px 8px; }
+.verdict-unclear    { background: #f59e0b !important; color: #ffffff !important; border: none !important; border-radius: 4px; padding: 2px 8px; }
+.verdict-error      { background: #6b7280 !important; color: #ffffff !important; border: none !important; border-radius: 4px; padding: 2px 8px; }
 
 /* ─── KPI strip (5 cells, vertical separators) ────────────────── */
 .kpi-strip {
