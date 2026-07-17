@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E5: Ambiguity & Uncertainty Handling — TOTALFLOW Compliance Intelligence Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="app-header__inner">
+      <a href="index.html" style="display: flex; align-items: center; gap: 16px; text-decoration: none;">
+        <img src="/jblogo.png" alt="Jambutty" class="app-header__logo">
+        <span class="app-header__brand">Jambutty</span>
+        <div class="app-header__title">
+          <h1>Policy Semantic Audit</h1>
+          <p>AI-driven expense justification research platform</p>
+        </div>
+      </a>
+    </div>
+  </header>
+  <nav class="app-tabs">
+    <div class="app-tabs__inner">
+      <a class="tab-btn" href="e1.html">E1: OCR</a>
+      <a class="tab-btn" href="e2.html">E2: Direct Policy</a>
+      <a class="tab-btn" href="e3.html">E3: Structured CoT</a>
+      <a class="tab-btn" href="e4.html">E4: Context</a>
+      <a class="tab-btn active" href="e5.html">E5: Uncertainty</a>
+      <a class="tab-btn" href="e6.html">E6: Adversarial</a>
+      <a class="tab-btn" href="gt.html">Annotate</a>
+      <a class="tab-btn" href="pe.html">Policy Editor</a>
+      <a class="tab-btn tab-btn--settings" href="st.html" title="Settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>
+      </svg></a>
+    </div>
+  </nav>
+
+  <div id="receipt-bar" class="hidden" style="max-width: 1024px; margin: 16px auto 0; padding: 0 24px;">
+    <div style="background: var(--bg-emerald); border: 1px solid #6ee7b7; border-radius: var(--r-md); padding: 10px 14px; display: flex; align-items: center; gap: 12px; font-size: 12px;">
+      <span style="font-weight: 600; color: var(--ink); text-transform: uppercase; letter-spacing: 0.06em;">Receipt:</span>
+      <span id="receipt-filename" style="color: var(--ink-soft); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+      <button id="receipt-change-btn" style="color: var(--indigo); font-weight: 500; background: none; border: none; cursor: pointer;">Change</button>
+      <button id="receipt-clear-btn" style="color: var(--ink-faint); font-weight: 500; background: none; border: none; cursor: pointer;">✕ Clear</button>
+    </div>
+  </div>
+
+  <main>
+    <div id="tab-e5" class="tab-content tab-panel">
+      <header class="page-header">
+        <h2>E5: Ambiguity &amp; Uncertainty Handling</h2>
+        <p>Upload an ambiguous receipt to evaluate whether the model recognises uncertainty or forces a confident compliance verdict.</p>
+      </header>
+
+      <div class="action-row">
+        <button onclick="showModal('E5: Ambiguity & Uncertainty Handling — Research Design', RD_CONTENT_E5)" class="btn-outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+          Research Design
+        </button>
+        <button onclick="showModal('E5: Ambiguity & Uncertainty Handling — Practical Example', PE_CONTENT_E5)" class="btn-outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+          Practical Example
+        </button>
+      </div>
+
+      <div class="work-area">
+        <div class="card">
+          <label class="field-label" for="e5-file">Receipt file (JPG, PNG, PDF)</label>
+          <input type="file" id="e5-file" accept="image/*,.pdf" class="file-input">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px;">
+            <div>
+              <label class="field-label" for="e5-policy" style="font-weight: 500; color: var(--ink-soft);">Policy Variant</label>
+              <select id="e5-policy" class="field-select">
+                <option value="clear">Clear policy</option>
+                <option value="vague">Vague policy</option>
+                <option value="contradictory">Contradictory policy</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label" for="e5-phase" style="font-weight: 500; color: var(--ink-soft);">Project Phase</label>
+              <select id="e5-phase" class="field-select">
+                <option value="0">Phase 1: Infrastructure Setup</option>
+                <option value="1" selected>Phase 2: Experimentation</option>
+                <option value="2">Phase 3: Evaluation &amp; Documentation</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-top: 20px; text-align: center;">
+            <button id="e5-btn" data-label="Analyse Ambiguity" onclick="runE5()" class="btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+              Analyse Ambiguity
+            </button>
+            <p class="helper-text">Evaluate uncertainty and determine whether the available evidence supports a reliable verdict</p>
+          </div>
+        </div>
+        <div class="info-sidebar">
+          <h3>About this experiment</h3>
+          <p>This experiment evaluates whether the model can recognise ambiguity, missing information and conflicting evidence, and respond with an appropriately qualified conclusion rather than a forced confident verdict.</p>
+        </div>
+      </div>
+
+      <div class="results-strip">
+        <div id="e5-status" class="status-card status-card--ready">
+          <span class="status-card__icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          <div class="status-card__text">
+            <p class="status-card__title">Ready to Run</p>
+            <p class="status-card__desc">Upload an ambiguous receipt and select the policy variant and project phase to begin.</p>
+          </div>
+        </div>
+        <div class="actions-card">
+          <h4>Actions</h4>
+          <div class="actions-row" id="e5-actions">
+            <button onclick="exportResultAsJSON('e5')" class="btn-outline">Download JSON</button>
+            <button onclick="exportResultAsCSV('e5')" class="btn-outline">Download CSV</button>
+            <button onclick="copyResultAsJSON('e5')" class="btn-outline">Copy JSON</button>
+            <button onclick="viewRawResponse('e5')" class="btn-outline">View Raw</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-note">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span>Exports include the transaction input, applicable policy, identified ambiguities, missing information, confidence assessment, recommended next action and model response.</span>
+      </div>
+    </div>
+
+  <footer class="app-footer">
+    <div class="app-footer__inner">
+      <div class="footer-brand">
+        <img src="/tflogo.png" alt="TOTAL FLOW">
+        <span class="name">TOTALFLOW</span>
+      </div>
+      <div class="footer-divider"></div>
+      <div class="footer-info">
+        <span class="title">TOTALFLOW Compliance Intelligence Engine</span>
+        <span class="title">Semantic Reasoning Research Platform</span>
+        <span class="accent">Research Programme &bull; R&amp;D 2025</span>
+        <span class="disclaimer">The TOTALFLOW Compliance Intelligence Engine, associated software, research methodologies, documentation and underlying intellectual property are proprietary to 3030 Technologies.</span>
+      </div>
+      <div class="footer-divider"></div>
+      <div class="footer-copy">
+        <div>&copy; 2025&ndash;26 3030 Technologies</div>
+        <div>All Rights Reserved.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

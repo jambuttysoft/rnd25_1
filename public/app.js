@@ -1,39 +1,32 @@
-// ─── Tab routing ────────────────────────────────────────────────────────────
+// ─── Multi-page routing ─────────────────────────────────────────────────────
+//
+// Each tab is now its own HTML file (e1.html, e2.html, gt.html, etc.).
+// The active tab is determined by the current URL. Tabs in the nav are
+// plain <a href> links — no JS routing. Auto-initialise per-page.
 
-// Track current tab for state persistence
-let _currentTab = 'e1'
+const _PAGE_KEYS = {
+  'index.html': null,
+  'e1.html': 'e1',
+  'e2.html': 'e2',
+  'e3.html': 'e3',
+  'e4.html': 'e4',
+  'e5.html': 'e5',
+  'e6.html': 'e6',
+  'gt.html': 'annotate',
+  'pe.html': 'policy-editor',
+  'st.html': 'settings',
+}
 
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const tabName = btn.dataset.tab
+let _currentTab = (() => {
+  const path = window.location.pathname.replace(/^\//, '')
+  return _PAGE_KEYS[path] || 'e1'
+})()
 
-    // Save current tab state before switching away
-    saveCurrentTabState()
-
-    // Switch tabs
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'))
-    btn.classList.add('active')
-    document.getElementById(`tab-${tabName}`).classList.remove('hidden')
-    _currentTab = tabName
-
-    // Lazy-load: annotate
-    if (tabName === 'annotate') initAnnotate()
-    // Lazy-load: policy editor
-    if (tabName === 'policy-editor') setTimeout(loadPolicyEditor, 50)
-
-    // Restore target tab state
-    setTimeout(() => restoreTabState(tabName), 10)
-    // Show shared receipt indicator on the target tab
-    setTimeout(() => syncReceiptIndicator(tabName), 15)
-  })
-})
-
-// ─── Per-tab state persistence ────────────────────────────────────────────────
+// ─── Per-tab state persistence (across pages, via sessionStorage) ──────────
 
 function saveCurrentTabState() {
   const tab = _currentTab
-  if (!tab || tab.startsWith('settings') || tab === 'annotate' || tab === 'policy-editor') return
+  if (!tab || tab === 'annotate' || tab === 'policy-editor' || tab === 'settings') return
 
   const state = { timestamp: new Date().toISOString() }
 
@@ -50,14 +43,16 @@ function saveCurrentTabState() {
   }
 
   // Save config snapshot for drift detection
-  const settings = getSettings()
-  state.configSnapshot = { model: settings.model, visionModel: settings.visionModel, policy: state.policy }
+  if (typeof getSettings === 'function') {
+    const settings = getSettings()
+    state.configSnapshot = { model: settings.model, visionModel: settings.visionModel, policy: state.policy }
+  }
 
   window.APP.state.setTabState(tab, state)
 }
 
 function restoreTabState(tabName) {
-  if (!tabName || tabName.startsWith('settings') || tabName === 'annotate' || tabName === 'policy-editor') return
+  if (!tabName || tabName === 'annotate' || tabName === 'policy-editor' || tabName === 'settings') return
 
   const state = window.APP.state.getTabState(tabName)
   if (!state) return
@@ -306,9 +301,20 @@ function buildMetaHtml(opts) {
 }
 
 function updateTabRunCounts() {
+  // Map href -> tab key
+  const tabFromHref = (href) => {
+    if (!href) return null
+    if (href.endsWith('e1.html')) return 'e1'
+    if (href.endsWith('e2.html')) return 'e2'
+    if (href.endsWith('e3.html')) return 'e3'
+    if (href.endsWith('e4.html')) return 'e4'
+    if (href.endsWith('e5.html')) return 'e5'
+    if (href.endsWith('e6.html')) return 'e6'
+    return null
+  }
   document.querySelectorAll('.tab-btn').forEach(btn => {
-    const tab = btn.dataset.tab
-    if (!tab || ['settings', 'annotate', 'policy-editor'].includes(tab)) return
+    const tab = tabFromHref(btn.getAttribute('href'))
+    if (!tab) return
     const count = ResultsStore.getResults(tab).length
     // Strip any existing "(N runs)" suffix to avoid stacking
     const baseLabel = btn.textContent.replace(/\s*\(\d+ runs?\)/g, '').trim()
@@ -2215,7 +2221,7 @@ window.APP.state = StateManager
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 document.getElementById('receipt-change-btn')?.addEventListener('click', () => {
-  const visibleInput = document.querySelector('.tab-panel:not(.hidden) input[type="file"]')
+  const visibleInput = document.querySelector('main input[type="file"]')
   if (visibleInput) visibleInput.click()
 })
 
@@ -2227,18 +2233,31 @@ document.getElementById('receipt-clear-btn')?.addEventListener('click', () => {
   document.querySelectorAll('input[type="file"]').forEach(el => el.classList.remove('opacity-50'))
 })
 
-loadSettings()
+// Per-page auto-initialisation
+if (_currentTab === 'annotate') {
+  initAnnotate()
+} else if (_currentTab === 'policy-editor') {
+  setTimeout(loadPolicyEditor, 50)
+} else if (_currentTab === 'settings') {
+  loadSettings()
+}
+
+// Restore state for experiment pages (E1-E6)
+if (_currentTab && !['annotate', 'policy-editor', 'settings'].includes(_currentTab)) {
+  setTimeout(() => restoreTabState(_currentTab), 10)
+}
+
 updateTabRunCounts()
 
 // Restore shared receipt on page load
 const savedReceipt = window.APP.state.getReceipt()
 if (savedReceipt) {
   updateReceiptBar(savedReceipt)
-  syncReceiptIndicator('e1')
+  setTimeout(() => syncReceiptIndicator(_currentTab), 15)
 }
 
 // Automatically sync file input selections to global receipt state
-document.querySelectorAll('input[type=\"file\"]').forEach(input => {
+document.querySelectorAll('input[type="file"]').forEach(input => {
   input.addEventListener('change', async (e) => {
     if (!e.target.files || !e.target.files[0]) return;
     const file = e.target.files[0];
