@@ -304,6 +304,61 @@ app.get('/api/annotations', (req, res) => {
 });
 
 
+// ─── GET /api/annotations/stats ──────────────────────────────────────────────
+// Aggregate counts for the GT KPI strip. Compares annotated filenames against
+// the full receipt list to surface pending (no entry or empty verdict),
+// completed (verdict set), and skipped (explicitly marked skipped).
+app.get('/api/annotations/stats', (req, res) => {
+  try {
+    const annotations = loadAnnotations();
+    let receipts = [];
+    try {
+      receipts = readdirSync(RECEIPTS_DIR)
+        .filter(f => /\.(jpg|jpeg|png|pdf)$/i.test(f));
+    } catch {
+      receipts = [];
+    }
+
+    const annByName = new Map(annotations.map(a => [a.filename, a]));
+
+    let pending = 0;
+    let completed = 0;
+    let skipped = 0;
+    let lastUpdated = null;
+
+    for (const filename of receipts) {
+      const ann = annByName.get(filename);
+      if (!ann) {
+        pending += 1;
+        continue;
+      }
+      if (ann.status === 'skipped' || ann.skipped === true) {
+        skipped += 1;
+      } else if (ann.human_verdict) {
+        completed += 1;
+      } else {
+        pending += 1;
+      }
+      const ts = ann.updated_at || ann.updatedAt || ann.last_modified || ann.lastModified;
+      if (ts && (!lastUpdated || new Date(ts) > new Date(lastUpdated))) {
+        lastUpdated = ts;
+      }
+    }
+
+    res.json({
+      pending,
+      completed,
+      skipped,
+      total: receipts.length,
+      annotated: annotations.length,
+      lastUpdated,
+    });
+  } catch (e) {
+    res.json({ error: e.message });
+  }
+});
+
+
 // ─── POST /api/annotations ────────────────────────────────────────────────────
 // Upsert one annotation record.
 app.post('/api/annotations', (req, res) => {
@@ -314,10 +369,11 @@ app.post('/api/annotations', (req, res) => {
   try {
     const all = loadAnnotations();
     const idx = all.findIndex(a => a.filename === entry.filename);
+    const stamped = { ...entry, updated_at: new Date().toISOString() };
     if (idx >= 0) {
-      all[idx] = entry;
+      all[idx] = stamped;
     } else {
-      all.push(entry);
+      all.push(stamped);
     }
     saveAnnotations(all);
     res.json({ ok: true });
