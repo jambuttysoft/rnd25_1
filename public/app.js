@@ -197,6 +197,17 @@ function setLoading(btnId, isLoading) {
   }
 }
 
+async function apiPost(url, body) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json()
+  if (data.error) throw new Error(data.error)
+  return data
+}
+
 function verdictBadge(verdict) {
   const cls = {
     justified: 'verdict-justified',
@@ -364,42 +375,45 @@ function renderExtractionResult(f) {
 }
 
 async function runE1() {
-  const btnId = 'e1-btn'
-  setLoading(btnId, true)
-  showResult('e1-result', '')
-  const startTime = performance.now()
+  const fileInput = document.getElementById('e1-file')
+  const file = fileInput.files[0]
+  if (!file) return showError('e1-result', 'Please select a receipt file')
+
+  setExperimentState('e1', 'running')
+  showResult('e1-result', '<p class="text-sm text-gray-500">Extracting fields...</p>')
+
   try {
     const { base64, mimeType } = await getFileData('e1-file')
     const { apiKey, visionModel } = getSettings()
+    const result = await apiPost('/api/extract', { base64, mimeType, apiKey, model: visionModel })
 
-    const hash = window.APP.state.computeHash(base64)
-    // Cache check removed for E1 per user request
-    const res = await fetch('/api/extract', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ base64, mimeType, apiKey, model: visionModel }),
-    })
-    const data = await res.json()
-    if (data.error) return showError('e1-result', data.error)
-
-    // Cache the extraction
-    const now = new Date().toISOString()
-    window.APP.state.setExtraction(hash, { ...data.extraction, visionModel, timestamp: now })
-    const duration = ((performance.now() - startTime) / 1000).toFixed(1)
-    const metaHtml = buildMetaHtml({ visionModel, duration, timestamp: now })
-    showResult('e1-result', renderExtractionResult(data.extraction) + metaHtml)
-    ResultsStore.addResult('e1', {
-      config: { visionModel, filename: window.APP.state.getReceipt()?.filename },
-      result: data.extraction,
-      hash: window.APP.state.computeHash(base64),
-    })
-    saveCurrentTabState()
-    updateTabRunCounts()
-  } catch (e) {
-    showError('e1-result', e.message)
-  } finally {
-    setLoading(btnId, false)
+    ResultsStore.set('e1', { extraction: result.extraction, visionModel })
+    setExperimentState('e1', 'complete')
+    renderE1Result(result.extraction)
+  } catch (err) {
+    setExperimentState('e1', 'error')
+    showError('e1-result', err.message || 'Extraction failed')
   }
+}
+
+function renderE1Result(data) {
+  const fields = [
+    { label: 'Vendor', key: 'vendor' },
+    { label: 'Transaction Date', key: 'date' },
+    { label: 'Amount', key: 'amount' },
+    { label: 'Currency', key: 'currency' },
+    { label: 'Expense Category', key: 'category' },
+    { label: 'Line Items', key: 'lineItems' }
+  ]
+  const html = `<div class="bg-white rounded-lg border border-gray-200 p-6">
+    <table class="w-full text-sm">
+      ${fields.map(f => `<tr class="border-b border-gray-100 last:border-0">
+        <td class="py-2 pr-4 text-gray-500 font-medium w-40">${f.label}</td>
+        <td class="py-2 text-gray-900">${escHtml(data?.[f.key] ?? '—')}</td>
+      </tr>`).join('')}
+    </table>
+  </div>`
+  showResult('e1-result', html)
 }
 
 // ─── E2: No-CoT Verdict ───────────────────────────────────────────────────────
@@ -796,6 +810,31 @@ const ResultsStore = {
 
   clearAllResults() {
     this._saveAll([])
+  },
+
+  _getSingleMap() {
+    try {
+      const raw = sessionStorage.getItem('psa_single_results')
+      return raw ? JSON.parse(raw) : {}
+    } catch { return {} }
+  },
+
+  _saveSingleMap(map) {
+    try {
+      sessionStorage.setItem('psa_single_results', JSON.stringify(map))
+    } catch (e) {
+      console.warn('sessionStorage quota exceeded for single results', e.message)
+    }
+  },
+
+  set(prefix, data) {
+    const map = this._getSingleMap()
+    map[prefix] = { ...data, timestamp: new Date().toISOString() }
+    this._saveSingleMap(map)
+  },
+
+  get(prefix) {
+    return this._getSingleMap()[prefix] || null
   },
 }
 

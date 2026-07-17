@@ -44,25 +44,52 @@
       <button id="receipt-clear-btn" class="text-xs text-gray-400 hover:text-red-600 font-medium">✕ Clear</button>
     </div>
 
-    <!-- E1: OCR Extraction -->
+    <!-- E1: OCR Extraction Baseline -->
     <div id="tab-e1" class="tab-panel">
-      <div class="flex items-center gap-2">
-        <h2 class="text-lg font-semibold mb-1">E1: OCR Extraction Baseline</h2>
-        <button onclick="window.APP.showExperimentInfo('e1')" class="info-btn" title="About this experiment">ℹ</button>
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="text-lg font-semibold">E1: OCR Extraction Baseline</h2>
+        <div class="flex gap-2">
+          <button onclick="showModal('E1: OCR Extraction Baseline — Research Design', RD_CONTENT_E1)" class="border border-gray-300 bg-white px-3 py-1.5 rounded text-xs font-medium hover:bg-gray-50">Research Design</button>
+          <button onclick="showModal('E1: OCR Extraction Baseline — Practical Example', PE_CONTENT_E1)" class="border border-gray-300 bg-white px-3 py-1.5 rounded text-xs font-medium hover:bg-gray-50">Practical Example</button>
+        </div>
       </div>
-      <p class="text-sm text-gray-500 mb-4">Upload a receipt — the model extracts all available fields: vendor details, tax IDs, line items with prices, payment method, and more.</p>
+      <p class="text-sm text-gray-500 mb-4">Upload a receipt to evaluate the model's ability to accurately transform unstructured financial documents into structured accounting data for downstream compliance reasoning.</p>
+
+      <!-- About This Experiment -->
+      <div class="bg-gray-50 rounded-lg border border-gray-200 p-4 text-sm text-gray-600 mb-4">
+        This experiment forms the foundation of the entire reasoning pipeline. Every subsequent experiment depends upon the structured accounting data produced by E1.
+      </div>
+
+      <!-- Status Card -->
+      <div id="e1-status" class="bg-white rounded-lg border border-gray-200 p-4 mb-4 status-card">
+        <div id="e1-status-ready">
+          <p class="text-sm font-medium text-gray-900">Ready to Run</p>
+          <p class="text-xs text-gray-500 mt-1">Upload a receipt file to begin the OCR extraction experiment.</p>
+        </div>
+        <div id="e1-status-complete" class="hidden">
+          <p class="text-sm font-medium text-green-700">&#10003; Extraction Complete</p>
+          <p class="text-xs text-gray-500 mt-1">Structured accounting data has been successfully extracted.</p>
+        </div>
+      </div>
+
+      <!-- Controls -->
       <div class="bg-white rounded-lg border border-gray-200 p-6">
         <label class="block text-sm font-medium mb-2">Receipt file (JPG, PNG, PDF)</label>
         <input type="file" id="e1-file" accept="image/*,.pdf" class="block w-full text-sm border border-gray-300 rounded px-3 py-2 mb-4">
-        <button id="e1-btn" data-label="Extract Fields" onclick="runE1()"
-          class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
-          Extract Fields
-        </button>
+        <button id="e1-btn" data-label="Run Experiment" onclick="runE1()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50">Run Experiment</button>
+        <p class="text-xs text-gray-400 mt-2">Execute OCR extraction experiment</p>
       </div>
+
+      <!-- Results -->
       <div id="e1-result" class="mt-4"></div>
-      <div class="mt-2 flex gap-2">
-        <button onclick="exportResultAsJSON('e1')" class="text-xs text-gray-400 hover:text-blue-600">Export JSON</button>
-        <button onclick="exportResultAsCSV('e1')" class="text-xs text-gray-400 hover:text-blue-600">Export CSV</button>
+
+      <!-- Actions -->
+      <div id="e1-actions" class="mt-4 flex gap-2 hidden">
+        <button onclick="exportResultAsJSON('e1')" class="text-xs text-gray-400 hover:text-blue-600">Download JSON</button>
+        <button onclick="exportResultAsCSV('e1')" class="text-xs text-gray-400 hover:text-blue-600">Download CSV</button>
+        <button onclick="copyResultAsJSON('e1')" class="text-xs text-gray-400 hover:text-blue-600">Copy JSON</button>
+        <button onclick="viewRawResponse('e1')" class="text-xs text-gray-400 hover:text-blue-600">View Raw Response</button>
+        <span class="text-xs text-gray-400 ml-2">Exports include the structured extraction results. Use "View Raw Response" to inspect the unformatted model output.</span>
       </div>
     </div>
 
