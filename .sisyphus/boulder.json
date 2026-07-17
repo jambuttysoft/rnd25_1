@@ -1,103 +1,50 @@
 {
-  "active_plan": "/Volumes/extdisk/WORK/RND2026/RND1/.sisyphus/plans/experiment-polish.md",
-  "started_at": "2026-07-14T14:22:09.239Z",
+  "active_plan": "/Volumes/extdisk/WORK/RND2026/RND1/.sisyphus/plans/2026-07-17-ui-redesign.md",
+  "started_at": "2026-07-17T13:16:54.728Z",
   "session_ids": [
-    "ses_09f430885ffe3ZfzlkW8agYjUe",
-    "ses_09ee9eb22ffelvrK7cQkUKcszT",
-    "ses_09ee9dfaeffef5nHNl7hMuafM0",
-    "ses_09ee9cb96ffeUcoGGBEx5I0Dob",
-    "ses_09ee9ba8cffevpHzvG1vB8Rm25"
+    "ses_0900c49eeffe2yD4k8r3pzjEpf"
   ],
   "session_origins": {
-    "ses_09f430885ffe3ZfzlkW8agYjUe": "direct",
-    "ses_09ee9eb22ffelvrK7cQkUKcszT": "appended",
-    "ses_09ee9dfaeffef5nHNl7hMuafM0": "appended",
-    "ses_09ee9cb96ffeUcoGGBEx5I0Dob": "appended",
-    "ses_09ee9ba8cffevpHzvG1vB8Rm25": "appended"
+    "ses_0900c49eeffe2yD4k8r3pzjEpf": "direct"
   },
-  "plan_name": "experiment-polish",
+  "plan_name": "2026-07-17-ui-redesign",
   "agent": "atlas",
   "task_sessions": {
     "todo:1": {
       "task_key": "todo:1",
       "task_label": "1",
-      "task_title": "Fix API Key localStorage Inconsistency",
-      "session_id": "ses_09efd37bbffekSF4QBPGbY2e0C",
+      "task_title": "Header + Footer + Tab labels + Logo files",
+      "session_id": "ses_08fc65898ffeBeCHMiAfNyyeZf",
       "agent": "Sisyphus-Junior",
       "category": "quick",
-      "updated_at": "2026-07-14T14:24:02.010Z"
-    },
-    "todo:2": {
-      "task_key": "todo:2",
-      "task_label": "2",
-      "task_title": "Build Shared State Manager (sessionStorage)",
-      "session_id": "ses_09efaef4fffeD4UmJWLPWD19Gd",
-      "agent": "Sisyphus-Junior",
-      "category": "quick",
-      "updated_at": "2026-07-14T14:26:23.277Z"
+      "updated_at": "2026-07-17T13:18:18.005Z"
     },
     "todo:4": {
       "task_key": "todo:4",
       "task_label": "4",
-      "task_title": "Modal/Overlay System + Experiment Metadata Config",
-      "session_id": "ses_09ef9c16cffe2d07KFwsSJZXAj",
+      "task_title": "E1: OCR Extraction Baseline (template/prototype)",
+      "session_id": "ses_08fbf7e3bffenFiIUJ7Puz30Vf",
       "agent": "Sisyphus-Junior",
       "category": "visual-engineering",
-      "updated_at": "2026-07-14T14:28:41.925Z"
+      "updated_at": "2026-07-17T13:27:36.496Z"
     },
     "todo:5": {
       "task_key": "todo:5",
       "task_label": "5",
-      "task_title": "Experiment Info Button Wiring",
-      "session_id": "ses_09ef7c5b4ffeZvwosllSGvkYsZ",
+      "task_title": "E2: Direct Policy Reasoning Baseline",
+      "session_id": "ses_08fbc45b5ffetGp4uuskHZAcnr",
       "agent": "Sisyphus-Junior",
-      "category": "quick",
-      "updated_at": "2026-07-14T14:29:52.777Z"
-    },
-    "todo:6": {
-      "task_key": "todo:6",
-      "task_label": "6",
-      "task_title": "Shared Receipt Bar + Extraction Cache",
-      "session_id": "ses_09ef503dcffeVOdv9vyFmXUDJO",
-      "agent": "Sisyphus-Junior",
-      "category": "deep",
-      "updated_at": "2026-07-14T14:34:23.859Z"
-    },
-    "todo:7": {
-      "task_key": "todo:7",
-      "task_label": "7",
-      "task_title": "Per-Tab State Persistence",
-      "session_id": "ses_09ef2b4f6ffedgmAegdVPgIOzz",
-      "agent": "Sisyphus-Junior",
-      "category": "quick",
-      "updated_at": "2026-07-14T14:37:04.073Z"
-    },
-    "todo:9": {
-      "task_key": "todo:9",
-      "task_label": "9",
-      "task_title": "Results Store + CSV/JSON Export",
-      "session_id": "ses_09ef02653ffeWYGYf1P9YULMXg",
-      "agent": "Sisyphus-Junior",
-      "category": "unspecified-high",
-      "updated_at": "2026-07-14T14:39:37.166Z"
+      "category": "visual-engineering",
+      "updated_at": "2026-07-17T13:29:49.329Z"
     },
     "todo:10": {
       "task_key": "todo:10",
       "task_label": "10",
-      "task_title": "Scientific Polish — Metadata, Timestamps, Config Snapshots",
-      "session_id": "ses_09eede4c6ffe71sA9HbzN1zuDC",
+      "task_title": "GT: Ground Truth Annotation (structural rework)",
+      "session_id": "ses_08fb9b4dcffe91ubYuZZG7zmKD",
       "agent": "Sisyphus-Junior",
       "category": "visual-engineering",
-      "updated_at": "2026-07-14T14:43:58.536Z"
-    },
-    "final-wave:f1": {
-      "task_key": "final-wave:f1",
-      "task_label": "F1",
-      "task_title": "**Plan Compliance Audit** — `oracle`",
-      "session_id": "ses_09ee9ba8cffevpHzvG1vB8Rm25",
-      "agent": "Sisyphus-Junior",
-      "category": "deep",
-      "updated_at": "2026-07-14T14:52:49.112Z"
+      "updated_at": "2026-07-17T13:38:01.328Z"
     }
   }
 }

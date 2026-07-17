@@ -18,3 +18,21 @@
 - Policy Editor save persists to server-side `data/policy/` JSON files
 - API key held in memory (`_apiKey` variable), never persisted to disk/localStorage
 - Tab state persisted via sessionStorage (survives F5 but not full navigation redirect)
+
+## 2026-07-17: Added modal system helpers, constants, status card
+
+### What was added
+1. **Status Card state machine** (`setExperimentState(prefix, state)`) — toggles ready/complete/running states with visibility and loading control. Uses `btn.id` not DOM element due to existing `setLoading` signature.
+
+2. **Result Actions** (`copyResultAsJSON`, `viewRawResponse`) — clipboard copy with "Copied!" feedback; raw response viewer reuses existing `showModal`.
+
+3. **Modal Content Constants** (18 total) — `RD_CONTENT_E1`–`PE_CONTENT_ST` with full Research Design + Practical Example text from `docs/changes/*.html`. Each section is `<div><h4>heading</h4><p>text</p></div>` format.
+
+### Key observations
+- Existing modal system at line 850+ already had `showModal`/`closeModal`/ESC handler/click-outside — no need to duplicate.
+- `setLoading(btnId, isLoading)` takes string ID, not DOM element — task spec showed `setLoading(btn, true)` (bug), used `btn.id` instead.
+- Content extracted from 9 SingleFile HTML exports using Python HTML parser skipping script/style/svg tags.
+- ST (Research Configuration) is not an experiment — its "Research Design" maps to the Page Guide modal content (Purpose + control descriptions).
+
+### Files touched
+- `public/app.js` — added functions between export section and modal system; added constants after expose section.
