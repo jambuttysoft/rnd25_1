@@ -847,6 +847,47 @@ function exportResultAsJSON(experimentId) {
   downloadFile(JSON.stringify(results, null, 2), filename, 'application/json')
 }
 
+// ─── Status Card ────────────────────────────────────────────────────────
+function setExperimentState(prefix, state) {
+  const readyEl = document.getElementById(`${prefix}-status-ready`)
+  const completeEl = document.getElementById(`${prefix}-status-complete`)
+  const statusCard = document.getElementById(`${prefix}-status`)
+  const btn = document.getElementById(`${prefix}-btn`)
+  const resultEl = document.getElementById(`${prefix}-result`)
+  const actionsEl = document.getElementById(`${prefix}-actions`)
+  if (!statusCard) return
+  statusCard.classList.remove('hidden')
+  if (readyEl) readyEl.classList.toggle('hidden', state !== 'ready')
+  if (completeEl) completeEl.classList.toggle('hidden', state !== 'complete')
+  if (state === 'running') {
+    setLoading(btn.id, true); if (resultEl) resultEl.innerHTML = ''; if (actionsEl) actionsEl.classList.add('hidden')
+  } else {
+    setLoading(btn.id, false)
+  }
+  if (state === 'complete' && actionsEl) actionsEl.classList.remove('hidden')
+}
+
+// ─── Result Actions ──────────────────────────────────────────────────────
+async function copyResultAsJSON(prefix) {
+  const data = ResultsStore.get(prefix)
+  if (!data) return
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(data, null, 2))
+    const btn = document.querySelector(`[onclick*="copyResultAsJSON('${prefix}')"]`)
+    if (btn) {
+      const orig = btn.textContent
+      btn.textContent = 'Copied!'
+      setTimeout(() => { btn.textContent = orig }, 2000)
+    }
+  } catch (e) { console.error('Copy failed:', e) }
+}
+
+function viewRawResponse(prefix) {
+  const data = ResultsStore.get(prefix)
+  if (!data) return
+  showModal('Raw Model Response', `<pre class="text-xs font-mono bg-gray-50 p-4 rounded overflow-x-auto whitespace-pre-wrap">${escHtml(JSON.stringify(data, null, 2))}</pre>`)
+}
+
 // ─── Modal System ──────────────────────────────────────────────────────────
 
 let _modalActive = false
@@ -883,6 +924,7 @@ function showModal(title, bodyHTML) {
   document.addEventListener('keydown', _modalKeyHandler)
 }
 
+const hideModal = closeModal
 function closeModal() {
   const overlay = document.getElementById('psa-modal-overlay')
   if (overlay) overlay.remove()
@@ -978,6 +1020,566 @@ window.APP.showExperimentInfo = showExperimentInfo
 window.APP.showModal = showModal
 window.APP.closeModal = closeModal
 window.APP.showReceiptViewer = showReceiptViewer
+window.APP.setExperimentState = setExperimentState
+window.APP.copyResultAsJSON = copyResultAsJSON
+window.APP.viewRawResponse = viewRawResponse
+
+// ─── Modal Content Constants ──────────────────────────────────────────────
+// Research Design modal content for each experiment (E1–E6), Ground Truth, Policy Editor, and Research Configuration
+
+const RD_CONTENT_E1 = `
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Research Objective</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Determine whether a multimodal large language model can accurately transform heterogeneous financial documents into structured accounting data suitable for downstream compliance reasoning.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Technical Uncertainty</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Real-world financial documents vary significantly in layout, language, image quality, lighting conditions, document damage and formatting. It is uncertain whether a multimodal large language model can consistently extract accounting-relevant information with sufficient accuracy for automated compliance reasoning.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Hypothesis</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">A multimodal large language model can accurately extract structured accounting fields from diverse financial documents with sufficient precision to support automated compliance reasoning.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Experimental Design</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Each receipt is processed using a single extraction pipeline without manual intervention. The extracted accounting fields are compared against manually prepared ground-truth annotations. Extraction performance is independently evaluated for each accounting field.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Evaluation Metrics</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The following structured accounting fields are evaluated: Vendor, Transaction Date, Amount, Currency, Expense Category, Line Items. Performance is measured using field-level extraction accuracy.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Expected Evidence</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The experiment should demonstrate measurable extraction accuracy across each accounting field and identify which fields are sufficiently reliable for downstream semantic reasoning.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Research Significance</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">This experiment establishes the data quality baseline upon which every subsequent reasoning experiment depends.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Dependencies</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">None. This experiment represents Layer 1 of the Compliance Intelligence Engine.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Role within the Compliance Intelligence Engine</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">E1 transforms unstructured financial documents into structured accounting information. The structured output produced by this experiment becomes the input for all downstream policy grounding, semantic reasoning and compliance decision experiments.</p>
+  </div>
+`
+
+const PE_CONTENT_E1 = `
+  <div>
+    <h4 class="font-semibold text-sm mb-1">What Happens</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The user uploads a receipt. The engine analyses the document using a multimodal large language model. Structured accounting fields are extracted. Any field that cannot be read with sufficient confidence is returned as null rather than inferred. The structured accounting data is passed to the Compliance Intelligence Engine. Downstream reasoning experiments evaluate policy compliance using the extracted information.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Practical Success</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The extracted accounting fields match the manually verified receipt data with sufficient accuracy to support downstream compliance reasoning.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Practical Failure</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The engine invents unreadable values, incorrectly extracts material accounting fields or produces structured data that cannot be relied upon for downstream reasoning.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Why This Matters</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Every downstream reasoning experiment assumes that the accounting data is accurate. If receipt extraction is unreliable, the reasoning engine cannot produce reliable compliance decisions regardless of the quality of the reasoning model.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Role within the Complete Research Programme</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Layer 1 — Document Understanding. Receipt → OCR Extraction → Structured Accounting Data → Policy Grounding → Semantic Reasoning → Compliance Decision.</p>
+  </div>
+`
+
+const RD_CONTENT_E2 = `
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Research Objective</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Determine whether a large language model can reliably apply organisational expense policy to structured accounting data without an explicit reasoning framework.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Technical Uncertainty</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">A large language model may be able to identify obvious policy relationships from transaction data and policy text, but it is uncertain whether direct prompting alone can produce consistent, well-grounded and sufficiently justified compliance decisions. The model may rely on surface-level language matching, overlook qualifying conditions, provide unsupported conclusions or express confidence where the available information is insufficient.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Hypothesis</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Without structured reasoning guidance, the model will produce lower-quality compliance verdicts, weaker policy justification and less consistent agreement with expert human assessment than the structured reasoning approach tested in E3.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Experimental Design</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Each transaction is evaluated using the structured accounting data produced by E1 together with the selected organisational policy variant and project phase. The model receives a single-turn instruction requiring it to return a compliance verdict and a concise reason supporting the verdict. The prompt does not instruct the model to reason step by step, identify the relevant policy clause, assess contextual factors separately or perform an information-sufficiency check. The model output is compared against the expected assessment and the results produced by E3 using the same transaction, policy variant and project phase.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Evaluation Metrics</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The experiment evaluates: Verdict accuracy, agreement with expert human assessment, consistency across repeated evaluations, relevance of the stated reason, correct use of the available policy, frequency of unsupported conclusions, frequency of inappropriate certainty.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Expected Evidence</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The experiment should produce a measurable baseline showing the level of policy interpretation that can be achieved without a structured reasoning process. The results should identify whether direct prompting is sufficient for simple cases and where it becomes unreliable when policy conditions, context or ambiguity require deeper reasoning.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Research Significance</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">E2 provides the control condition for the reasoning research programme. Without this baseline, it would not be possible to determine whether the structured reasoning framework introduced in E3 produces a genuine improvement in decision quality, policy grounding and auditability.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Dependencies</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">E2 depends on the structured accounting data produced by E1. E3 applies a structured reasoning framework to the same policy and transaction inputs so that the results can be compared directly.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Role within the Compliance Intelligence Engine</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">E2 measures the minimum reasoning capability of the engine when policy interpretation is performed without a guided reasoning process. It establishes the baseline against which all later reasoning improvements are evaluated.</p>
+  </div>
+`
+
+const PE_CONTENT_E2 = `
+  <div>
+    <h4 class="font-semibold text-sm mb-1">What Happens</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The user uploads a receipt. E1 converts the receipt into structured accounting data. The user selects a policy variant. The user selects a project phase. The structured transaction data, selected policy and selected phase are presented to the model. The model returns a direct verdict and a concise reason. No structured reasoning sequence is imposed on the model. The result is recorded as the direct policy reasoning baseline. The result is compared with E3 to determine whether structured reasoning improves the outcome.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Practical Success</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The model produces the correct verdict and gives a concise reason that is supported by the selected policy, project phase and available transaction data.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Practical Failure</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The model overlooks a material policy condition, relies on superficial keyword matching, produces an unsupported verdict or expresses certainty where the available evidence is insufficient.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Why This Matters</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">A direct model response may appear efficient and convincing while concealing weak reasoning. E2 determines whether unaided policy interpretation is dependable enough for compliance use and establishes the performance level that the structured reasoning approach must improve upon.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Role within the Complete Research Programme</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Layer 1 — Document Understanding: Receipt → OCR Extraction → Structured Accounting Data. Layer 2 — Policy Grounding: Selected Policy Variant + Selected Project Phase + Structured Accounting Data. Layer 3 — Direct Reasoning and Verdict: Direct Policy Evaluation → Verdict + Concise Reason → Baseline Result for Comparison with E3.</p>
+  </div>
+`
+
+const RD_CONTENT_E3 = `
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Research Objective</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Determine whether a structured reasoning framework improves the model’s ability to interpret organisational policy, apply relevant conditions and produce reliable compliance decisions.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Technical Uncertainty</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">It is uncertain whether requiring a large language model to follow an explicit reasoning structure will materially improve compliance decision quality when compared with direct prompting. The model may still misidentify the expense type, select an irrelevant policy clause, overlook qualifying conditions, produce unsupported reasoning or generate a plausible explanation that does not accurately support the final verdict.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Hypothesis</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">A structured reasoning framework will improve verdict accuracy, policy grounding, explanation quality and agreement with expert human assessment when compared with the direct policy reasoning baseline established in E2.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Experimental Design</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Each transaction is evaluated using the same structured accounting data and organisational policy used in E2. The model is instructed to follow a defined reasoning sequence: Identify the expense type. Identify the applicable policy clause or condition. Assess whether the transaction satisfies the policy requirements. Identify ambiguity, missing information or conflicting evidence. Produce a final compliance verdict supported by a concise justification. The output is compared directly with E2 using the same transaction and policy inputs.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Evaluation Metrics</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The experiment evaluates: Verdict accuracy, agreement with expert human assessment, correct identification of the expense type, correct selection of the applicable policy clause, correct application of policy conditions, relevance and completeness of the justification, consistency across repeated evaluations, frequency of unsupported conclusions, frequency of omitted ambiguities or missing information, improvement over the E2 direct policy reasoning baseline.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Expected Evidence</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The experiment should demonstrate whether structured reasoning produces measurable improvements in policy interpretation, verdict accuracy, consistency and explanation quality. The results should also identify whether the structured process reduces unsupported conclusions and makes the basis of each compliance decision easier to inspect and audit.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Research Significance</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">E3 introduces the structured reasoning approach that subsequent experiments E4, E5 and E6 build upon. It determines whether requiring the model to follow an explicit reasoning process materially improves compliance decision quality and auditability.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Dependencies</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">E3 depends on the structured accounting data produced by E1. E3 uses the same transaction and policy inputs as E2 so that direct and structured reasoning outcomes can be compared under controlled conditions. E4, E5 and E6 extend the structured reasoning approach by testing contextual sensitivity, uncertainty recognition and policy robustness.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Role within the Compliance Intelligence Engine</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">E3 introduces the engine’s structured policy reasoning capability. It converts extracted accounting data and policy text into an auditable reasoning process that supports the final compliance verdict.</p>
+  </div>
+`
+
+const PE_CONTENT_E3 = `
+  <div>
+    <h4 class="font-semibold text-sm mb-1">What Happens</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">E1 converts the uploaded receipt into structured accounting data. The structured transaction data is presented to the model together with the applicable organisational policy. The model identifies the expense type. The model identifies the relevant policy clause or condition. The model evaluates whether the transaction satisfies the policy requirements. The model identifies ambiguity, missing information or conflicting evidence. The model produces a compliance verdict supported by a structured justification. The result is compared with E2 to determine whether structured reasoning improves the outcome.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Practical Success</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The model identifies the correct expense type and policy clause, applies the relevant conditions correctly, explains the basis of the decision and produces a verdict consistent with expert review.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Practical Failure</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The model selects an irrelevant policy clause, overlooks a material condition, presents reasoning that does not support the verdict or produces an explanation that appears structured but is factually or logically unsound.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Why This Matters</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">A compliance decision must be more than a plausible answer. The reviewer must be able to understand which policy was applied, how the evidence was assessed and why the final conclusion was reached. E3 determines whether structured reasoning improves both decision quality and auditability.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Role within the Complete Research Programme</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Layer 1 — Document Understanding: Receipt → OCR Extraction → Structured Accounting Data. Layer 2 — Policy Grounding: Policy Text + Structured Accounting Data → Applicable Policy Clause and Conditions. Layer 3 — Structured Reasoning and Verdict: Expense Identification → Policy Application → Verdict with Justification.</p>
+  </div>
+`
+
+const RD_CONTENT_E4 = `
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Research Objective</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Determine whether a large language model can correctly interpret an identical accounting transaction differently when the relevant project phase changes.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Technical Uncertainty</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">A transaction may be allowable in one project phase and inappropriate in another even when the receipt, supplier, amount and expense category remain unchanged. It is uncertain whether the model can correctly incorporate project context into its policy interpretation or whether it will rely mainly on surface-level transaction attributes and return the same verdict for every phase.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Hypothesis</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">A semantically grounded reasoning model will produce different compliance outcomes for the same transaction when the applicable project phase changes and the organisational policy requires different treatment in each phase.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Experimental Design</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The same structured transaction data produced by E1 is evaluated against the selected organisational policy across all defined project phases: Phase 1 — Infrastructure Setup, Phase 2 — Experimentation, Phase 3 — Evaluation and Documentation. The receipt data, supplier, amount, currency, expense category and selected policy remain unchanged across all evaluations. Only the project phase changes. For each phase, the model must identify the relevant expense type, identify the applicable policy clause or condition, evaluate whether the expense is appropriate for that project phase, and identify ambiguity, missing information or conflicting evidence.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Evaluation Metrics</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The experiment evaluates: Correct identification of the applicable project phase, correct interpretation of phase-specific policy conditions, appropriateness of verdict changes across phases, agreement with expert human assessment, relevance of the stated justification, consistency across repeated evaluations, frequency of unchanged verdicts where context should alter the result, frequency of changed verdicts where context should not alter the result.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Expected Evidence</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The experiment should demonstrate whether the model can distinguish between otherwise identical transactions by applying phase-specific policy conditions. Successful context-sensitive reasoning will be evidenced where the model changes its verdict only when the policy and project phase require a different outcome.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Research Significance</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">E4 determines whether the engine can reason beyond the visible contents of a receipt. A reliable compliance system must understand that business justification can depend on project stage, operational purpose and timing, rather than only on supplier, amount or expense category.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Dependencies</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">E4 depends on the structured accounting data produced by E1, the policy reasoning baseline established in E2, and the structured reasoning method evaluated in E3. E4 applies the same transaction and selected policy across every project phase so that context remains the controlled variable.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Role within the Compliance Intelligence Engine</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">E4 validates the engine’s ability to combine structured transaction data, organisational policy and changing operational context when producing compliance decisions. It tests whether the engine is performing context-sensitive semantic reasoning rather than static rule matching.</p>
+  </div>
+`
+
+const PE_CONTENT_E4 = `
+  <div>
+    <h4 class="font-semibold text-sm mb-1">What Happens</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">E1 converts the uploaded receipt into structured accounting data. The reviewer selects the required policy variant. The same transaction is automatically evaluated under every project phase. The engine identifies whether the expense is appropriate for each phase. A separate verdict and reason are produced for each phase. The phase outcomes are presented together for comparison. The system records whether the verdict changed appropriately as the context changed.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Practical Success</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The engine produces different verdicts where the policy requires different treatment across project phases and clearly explains the contextual condition supporting each outcome.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Practical Failure</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The engine returns the same verdict for every phase despite material policy differences, changes its verdict without policy support, or ignores the project context.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Why This Matters</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Real-world compliance decisions cannot always be made from transaction data alone. The same expense may be appropriate, premature, excessive or no longer necessary depending on when and why it was incurred. E4 establishes whether the engine can use changing business context as part of its reasoning rather than treating every transaction as an isolated document.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Role within the Complete Research Programme</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Layer 1 — Document Understanding: Receipt → OCR Extraction → Structured Accounting Data. Layer 2 — Policy Grounding and Context: Selected Policy + Structured Accounting Data → Automatic Evaluation Across All Project Phases. Layer 3 — Context-Sensitive Reasoning and Verdict: Phase-Specific Policy Application → Phase-Specific Verdict and Reason.</p>
+  </div>
+`
+
+const RD_CONTENT_E5 = `
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Research Objective</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Determine whether a large language model can recognise when available transaction evidence is insufficient, ambiguous or internally inconsistent and respond with an appropriately qualified compliance assessment.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Technical Uncertainty</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">A model may produce a confident and plausible answer even when the receipt, policy or contextual information does not support a reliable conclusion. It is uncertain whether the model can distinguish genuine ambiguity from ordinary variation, identify missing or conflicting evidence, lower its confidence appropriately, avoid inventing facts to complete the assessment, and recommend a proportionate next step rather than forcing approval or rejection.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Hypothesis</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">A structured uncertainty-handling framework will increase the frequency of appropriately qualified verdicts, improve identification of missing information and reduce unsupported confidence when compared with direct or purely structured reasoning without an explicit ambiguity check.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Experimental Design</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The model receives structured accounting data extracted from the uploaded receipt, the selected organisational policy variant, and the selected project phase. The model is instructed to assess the sufficiency and clarity of the available evidence before producing a final verdict. The model must identify the expense type, identify the applicable policy clause or condition, assess the transaction against the selected project phase, identify ambiguity, missing information or conflicting evidence, determine whether a reliable verdict is possible, assign an appropriate confidence level, recommend the next action, and produce a final compliance verdict only where the available evidence supports it.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Evaluation Metrics</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The experiment evaluates: Correct identification of ambiguity, correct identification of missing information, appropriate use of an unclear or insufficient-evidence verdict, calibration of confidence level, frequency of unsupported confident verdicts, frequency of invented or assumed facts, relevance of the recommended next action, agreement with expert human assessment, consistency across repeated evaluations, improvement over E2 and E3 where uncertainty is material.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Expected Evidence</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The experiment should demonstrate whether the model can distinguish between a transaction that is clearly compliant, clearly non-compliant, or cannot be reliably assessed from the available evidence. Successful evidence will show that the model identifies the exact source of uncertainty, lowers confidence appropriately and requests the minimum additional information required to resolve the matter.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Research Significance</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">A compliance system must know when it does not know. A model that produces confident answers in ambiguous situations creates audit, governance and decision-making risk. E5 tests whether the engine can treat uncertainty as a formal outcome rather than as a failure to answer.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Dependencies</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">E5 depends on the structured accounting data produced by E1, the direct policy baseline established in E2, the structured reasoning method established in E3, and the contextual reasoning capability tested in E4. E5 adds an explicit evidence-sufficiency and uncertainty assessment before the final verdict.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Role within the Compliance Intelligence Engine</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">E5 introduces the engine’s uncertainty-control layer. It enables the engine to identify when a compliance decision should be deferred, qualified or escalated because the available evidence is incomplete, ambiguous or contradictory.</p>
+  </div>
+`
+
+const PE_CONTENT_E5 = `
+  <div>
+    <h4 class="font-semibold text-sm mb-1">What Happens</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">E1 converts the uploaded receipt into structured accounting data. The transaction is presented with the selected policy and project phase. The engine identifies the relevant expense type and policy condition. The engine checks whether the receipt and context provide sufficient evidence. Any missing, unclear or conflicting information is recorded. The engine assigns a confidence level. The engine determines whether it can produce a reliable verdict. Where evidence is insufficient, the engine returns an unclear or insufficient-evidence result and recommends the next action.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Practical Success</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The model identifies the specific ambiguity, explains why the available evidence is insufficient, assigns an appropriate confidence level and recommends obtaining the missing evidence before making a final decision.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Practical Failure</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The model assumes facts not present in the receipt, forces a justified or suspicious verdict, expresses excessive confidence or fails to identify the evidence required to resolve the ambiguity.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Why This Matters</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Ambiguity is common in real financial documents. Abbreviated supplier descriptions, incomplete receipts, unclear business purpose and conflicting contextual information can make a reliable decision impossible. E5 determines whether the engine can prevent false certainty and route genuinely uncertain cases for appropriate human or documentary review.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Role within the Complete Research Programme</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Layer 1 — Document Understanding: Receipt → OCR Extraction → Structured Accounting Data. Layer 2 — Policy and Context Grounding: Policy Text + Structured Accounting Data + Project Phase → Applicable Policy Conditions. Layer 3 — Structured Reasoning with Uncertainty Check: Evidence Sufficiency Assessment → Verdict or Deferred Outcome with Confidence and Recommended Next Action.</p>
+  </div>
+`
+
+const RD_CONTENT_E6 = `
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Research Objective</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Determine whether a large language model can reliably distinguish between clear, vague and contradictory organisational policies and adjust its compliance verdict, confidence and explanation appropriately.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Technical Uncertainty</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">A language model may produce convincing compliance decisions even where the governing policy is incomplete, vague or internally contradictory. It is uncertain whether the model can accurately identify policy-quality problems before applying the policy, or whether it will resolve ambiguity by inventing assumptions, ignoring contradictions or forcing a confident verdict. It is also uncertain whether the model’s assessment of policy clarity will remain consistent across repeated evaluations.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Hypothesis</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">A reliable policy-reasoning model will produce a stable and well-grounded verdict under the clear policy, express reduced confidence and identify missing guidance under the vague policy, and identify conflicting requirements and avoid a forced verdict under the contradictory policy. The model should not treat all three policy variants as equally clear or produce materially identical reasoning across them.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Experimental Design</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The same structured transaction data and selected project phase are evaluated against three policy variants: Clear policy, Vague policy, and Contradictory policy. The receipt, supplier, amount, expense category and project phase remain unchanged. Only the policy wording changes. For each policy variant, the model must assess the clarity and internal consistency of the policy, identify the applicable policy clause or condition, determine whether sufficient information exists to reach a compliance decision, produce a verdict or explicitly state that a reliable verdict cannot be reached, provide a confidence score, and explain the basis of the outcome. The three outputs are compared side by side.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Evaluation Metrics</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The experiment evaluates: Correct classification of policy clarity, correct identification of vague or missing policy guidance, correct identification of contradictory clauses, verdict accuracy under the clear policy, appropriate reduction in confidence under vague or contradictory policies, frequency of forced verdicts where no reliable verdict is possible, frequency of invented clauses, facts or assumptions, consistency across repeated evaluations, agreement with expert human assessment, difference in reasoning quality across policy variants.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Expected Evidence</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The experiment should demonstrate whether the model’s reasoning changes appropriately when policy quality deteriorates. Successful evidence will show that the model treats clear, vague and contradictory policies differently, identifies the limitations of the available policy and avoids presenting unsupported conclusions as reliable compliance decisions.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Research Significance</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">E6 tests the robustness of the Compliance Intelligence Engine under deliberately adverse policy conditions. Real organisational policies are not always clear, complete or internally consistent. A reliable compliance system must identify those defects instead of silently converting them into confident but unsupported decisions.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Dependencies</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">E6 depends on the structured accounting data produced by E1, the policy reasoning baseline established in E2, the structured reasoning method established in E3, the context-sensitive reasoning tested in E4, and the uncertainty-handling capability tested in E5. E6 combines these capabilities in a comparative stress test across policy variants.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Role within the Compliance Intelligence Engine</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">E6 validates the engine’s ability to assess the reliability of the governing policy before relying on it. It introduces policy-quality diagnostics, contradictory-policy detection and hallucination-risk indicators into the compliance reasoning workflow.</p>
+  </div>
+`
+
+const PE_CONTENT_E6 = `
+  <div>
+    <h4 class="font-semibold text-sm mb-1">What Happens</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">E1 converts the uploaded receipt into structured accounting data. The user selects the applicable project phase. The same transaction is evaluated against the clear policy, the vague policy, and the contradictory policy. The model assesses policy clarity for each variant. The model produces a verdict, confidence score and reason for each variant. The three results are displayed side by side. Reliability warnings appear where the model misreads policy clarity or produces unsupported certainty.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Practical Success</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The model applies the clear policy correctly, identifies the vague policy as insufficiently precise, identifies the contradictory policy as internally inconsistent, reduces confidence where appropriate, avoids inventing policy requirements, and avoids forcing a compliance verdict where the policy cannot support one.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Practical Failure</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The model treats all three policies as equally clear, produces the same verdict and confidence for every policy variant, ignores contradictory clauses, invents missing approval conditions, produces a confident verdict without adequate policy support, or misclassifies vague or contradictory policy as clear.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Why This Matters</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">A compliance system can be dangerous if it produces confident answers from defective policy. E6 determines whether the engine can recognise when the governing rules themselves are unreliable and communicate that limitation to reviewers before a decision is accepted.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Role within the Complete Research Programme</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Layer 1 — Document Understanding: Receipt → OCR Extraction → Structured Accounting Data. Layer 2 — Context and Policy Inputs: Structured Accounting Data + Project Phase → Clear Policy / Vague Policy / Contradictory Policy. Layer 3 — Adversarial Policy Evaluation: Policy-Clarity Assessment → Clause and Conflict Identification → Verdict or Insufficient-Policy Outcome with Confidence and Supporting Reason.</p>
+  </div>
+`
+
+const RD_CONTENT_GT = `
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Research Objective</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Create a reliable human-reviewed reference dataset against which model extraction and compliance-reasoning outputs can be evaluated.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Technical Uncertainty</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Human annotations may be inconsistent where source documents are unclear, policy terms are ambiguous or reviewers interpret evidence differently. It is therefore uncertain whether a single annotation is sufficient for all cases and whether disagreement between reasonable reviewers must be recorded as part of the dataset.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Hypothesis</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">A structured annotation process that records corrected transaction data, human verdicts, reasons and ambiguity indicators will produce a sufficiently reliable benchmark for evaluating the model across the research programme.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Annotation Method</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">For each receipt, the reviewer must: Inspect the source document. Review the fields extracted by E1. Correct any extraction errors. Apply the relevant policy and context. Assign a human verdict. Record the principal reason. Identify ambiguity where reasonable disagreement may exist. Save the completed annotation with reviewer and timestamp metadata.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Quality Controls</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The annotation process should support: Required verdict reason, prevention of silent overwriting.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Evaluation Use</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The completed ground truth dataset is used to calculate: OCR field accuracy, verdict agreement, false positives, false negatives, ambiguity-recognition performance, hallucination indicators, experiment-to-experiment improvement.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Expected Evidence</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The ground truth dataset should enable reliable comparison between model outputs and human judgement across all experiments, identifying specific areas where the model succeeds or requires improvement.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Research Significance</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">A model may produce a convincing verdict that is nevertheless wrong. Ground truth annotation provides the trusted reference needed to distinguish genuine model performance from plausible but unsupported output.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Dependencies</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">This module depends on the structured accounting data produced by E1 and provides the human-reviewed reference for evaluating E2 through E6.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Role within the Compliance Intelligence Engine</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">This module provides the trusted human evidence layer required to determine whether the engine's outputs are correct, explainable and reliable.</p>
+  </div>
+`
+
+const PE_CONTENT_GT = `
+  <div>
+    <h4 class="font-semibold text-sm mb-1">What Happens</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The reviewer selects a cloud-hosting receipt. The system loads the receipt preview. E1 extraction populates the vendor, date, amount, currency and category. The reviewer corrects any inaccurate fields. The reviewer assesses the expense against the applicable policy and project context. The reviewer selects Justified, Suspicious or Unclear. The reviewer records the primary reason and any ambiguity. The annotation is saved to the ground truth dataset.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Practical Success</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The saved annotation accurately represents the source document, the applicable policy and the considered human compliance judgement.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Practical Failure</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The reviewer cannot see the receipt, extracted values fail to load, an existing annotation is not populated, required reasoning is omitted or the system saves an incomplete result without warning.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Why This Matters</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">A model may produce a convincing verdict that is nevertheless wrong. Ground truth annotation provides the trusted reference needed to distinguish genuine model performance from plausible but unsupported output.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Role within the Complete Research Programme</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">This module provides the trusted human evidence layer required to determine whether the engine's outputs are correct, explainable and reliable across all experiments.</p>
+  </div>
+`
+
+const RD_CONTENT_PE = `
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Research Objective</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Create a controlled, versioned policy dataset that allows the model's compliance reasoning to be evaluated under clear, vague and contradictory policy conditions.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Technical Uncertainty</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">It is uncertain whether policy wording quality materially changes the model's ability to identify applicable rules, calibrate confidence, recognise ambiguity and avoid unsupported conclusions. It is also uncertain whether experiment results remain reproducible when policies are edited without version control or immutable policy snapshots.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Hypothesis</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">A versioned policy-control process using deliberately designed clear, vague and contradictory variants will provide stable experimental inputs and allow meaningful comparison of model behaviour under changing policy quality.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Policy Design Method</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">For each policy variant, the researcher must: Define the project scope. Define the three project phases. Define Allowed, Restricted and Forbidden rules for each phase. Define thresholds and approval conditions where applicable. Control ambiguity and contradiction according to the policy variant. Assign rule identifiers. Save the policy as a versioned research input. Link every experiment run to the exact policy version used.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Quality Controls</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The policy-control process should support: Required reason for change.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Expected Evidence</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">A versioned policy-control process ensures that measured differences in model behaviour can be attributed to the experiment rather than accidental changes in the governing rules.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Research Significance</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The compliance reasoning experiments cannot be evaluated unless the policy inputs are controlled, traceable and reproducible.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Dependencies</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">This module supplies policy inputs to E2, E3, E4, E5 and E6.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Role within the Compliance Intelligence Engine</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">This module provides the controlled policy evidence layer required to test whether the engine can reason reliably when organisational rules vary in clarity, completeness and internal consistency.</p>
+  </div>
+`
+
+const PE_CONTENT_PE = `
+  <div>
+    <h4 class="font-semibold text-sm mb-1">What Happens</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The researcher selects Clear Policy. The latest saved version loads. The researcher updates a Phase 2 software-subscription rule. The system identifies unsaved changes. The researcher enters a reason for change. The researcher selects Save Policy. The system validates the policy. A new version is created. Future experiment runs use the new policy version. Earlier experiment runs remain linked to the previous version.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Practical Success</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The new policy version is validated, saved, timestamped and linked only to future experiment runs. The previous version remains available and all earlier results remain reproducible.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Practical Failure</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">The current policy is silently overwritten, previous results lose their original policy reference, the user is not warned about unsaved changes, or a destructive action removes research history.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Why This Matters</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">A compliance experiment can appear valid while using different policy inputs across runs. The Policy Editor ensures that policy changes are controlled, visible and reproducible so that measured differences in model behaviour can be attributed to the experiment rather than accidental changes in the governing rules.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Role within the Complete Research Programme</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">This module provides the controlled policy inputs required for experiments E2 through E6. Versioned policy control ensures that every experiment run remains traceable to the exact policy used at execution time.</p>
+  </div>
+`
+
+const RD_CONTENT_ST = `
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Purpose</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">This page defines the technical configuration used to execute and compare the research experiments. Changes may affect future experiment outputs and must be controlled to preserve reproducibility.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">OpenRouter API Key</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Authenticates requests to the selected model provider. The key is masked, is not included in exported experiment data and must not appear in logs or error messages.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Vision Model — Layer 1</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Defines the model used for OCR and document understanding in E1. Changing this setting may alter the structured data supplied to later experiments.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Reasoning Model — Layer 3</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Defines the model used for policy reasoning and verdict generation in E2–E6. Changing this setting allows model-to-model comparison but also changes the experimental condition.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Currency Override</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Determines whether prompts use the receipt currency or a forced AUD, USD or EUR value. The selected treatment is recorded with each affected run.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Save Settings</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Stores the active research configuration for future runs and creates a traceable configuration version.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Test Connection</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Checks whether the API key, provider and selected model configuration are reachable.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Export Experiment Results</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Exports retained E1–E6 run data and supporting research metadata as JSON. Authentication secrets are excluded.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Delete Experiment Results</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Permanently deletes saved E1–E6 outputs only after explicit confirmation. It does not delete policies, ground-truth annotations, settings or API credentials.</p>
+  </div>
+`
+
+const PE_CONTENT_ST = `
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Why This Matters</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">A research result is not reproducible unless the exact technical configuration used to generate it is known. This page ensures that model choice, provider connection and currency treatment are treated as controlled research inputs rather than informal application preferences.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Core Research-Control Principle</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Configuration changes apply only to future experiment runs. Every experiment result must record the vision model, reasoning model, model provider, currency treatment, configuration version or snapshot, date and time of execution, and experiment run identifier. Existing experiment results must remain linked to their original configuration even after the active settings are changed.</p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-sm mb-1">Data Requirements</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Each saved configuration should include at least: Configuration identifier, configuration version, provider name, vision model, reasoning model, currency treatment, connection-test status, saved by, saved timestamp, and status. The API key itself must not be included in exported configuration metadata.</p>
+  </div>
+`
 
 // ─── Policy Editor ─────────────────────────────────────────────────────────
 

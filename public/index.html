@@ -11,21 +11,26 @@
 
   <!-- Header -->
   <header class="bg-white border-b border-gray-200 px-6 py-4">
-    <h1 class="text-xl font-bold text-gray-900">Policy Semantic Audit</h1>
-    <p class="text-sm text-gray-500 mt-0.5">AI-driven expense justification research platform</p>
+    <div class="flex items-center gap-4">
+      <img src="/jblogo.png" alt="JAMBUTTY" class="h-8 w-auto">
+      <div>
+        <h1 class="text-xl font-bold text-gray-900">TOTALFLOW Compliance Intelligence Engine</h1>
+        <p class="text-sm text-gray-500 mt-0.5">Semantic Reasoning Research Platform</p>
+      </div>
+    </div>
   </header>
 
   <!-- Tab Navigation -->
   <nav class="bg-white border-b border-gray-200 px-6 flex gap-0 overflow-x-auto">
-    <button class="tab-btn active px-4 py-3 text-sm whitespace-nowrap" data-tab="e1">E1: OCR</button>
-    <button class="tab-btn px-4 py-3 text-sm whitespace-nowrap" data-tab="e2">E2: No-CoT</button>
-    <button class="tab-btn px-4 py-3 text-sm whitespace-nowrap" data-tab="e3">E3: CoT</button>
-    <button class="tab-btn px-4 py-3 text-sm whitespace-nowrap" data-tab="e4">E4: Phase</button>
+    <button class="tab-btn active px-4 py-3 text-sm whitespace-nowrap" data-tab="e1">E1: OCR Baseline</button>
+    <button class="tab-btn px-4 py-3 text-sm whitespace-nowrap" data-tab="e2">E2: Direct Policy</button>
+    <button class="tab-btn px-4 py-3 text-sm whitespace-nowrap" data-tab="e3">E3: Structured Reasoning</button>
+    <button class="tab-btn px-4 py-3 text-sm whitespace-nowrap" data-tab="e4">E4: Context</button>
     <button class="tab-btn px-4 py-3 text-sm whitespace-nowrap" data-tab="e5">E5: Ambiguity</button>
-    <button class="tab-btn px-4 py-3 text-sm whitespace-nowrap" data-tab="e6">E6: Adversarial</button>
-    <button class="tab-btn px-4 py-3 text-sm whitespace-nowrap" data-tab="annotate">Annotate</button>
-    <button class="tab-btn px-3 py-3 text-sm whitespace-nowrap" data-tab="policy-editor">Policy Editor</button>
-    <button class="tab-btn px-4 py-3 text-sm whitespace-nowrap ml-auto" data-tab="settings">⚙ Settings</button>
+    <button class="tab-btn px-4 py-3 text-sm whitespace-nowrap" data-tab="e6">E6: Policy Stress Test</button>
+    <button class="tab-btn px-4 py-3 text-sm whitespace-nowrap" data-tab="annotate">GT: Ground Truth</button>
+    <button class="tab-btn px-3 py-3 text-sm whitespace-nowrap" data-tab="policy-editor">PE: Policy Editor</button>
+    <button class="tab-btn px-4 py-3 text-sm whitespace-nowrap ml-auto" data-tab="settings">ST: Research Configuration</button>
   </nav>
 
   <!-- Tab Panels -->
@@ -418,6 +423,14 @@
     </div>
 
   </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-gray-200 px-6 py-4">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <img src="/tflogo.png" alt="TOTAL FLOW" class="h-6 w-auto">
+      <p class="text-xs text-gray-400">© 2026 JAMBUTTY. All rights reserved. For research purposes only.</p>
+    </div>
+  </footer>
 
   <script src="/app.js"></script>
 </body>

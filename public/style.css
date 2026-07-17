@@ -251,3 +251,21 @@ body.modal-open {
   border-color: #2563eb;
   transform: scale(1.08);
 }
+
+/* ─── Modal System ─────────────────────────────────────── */
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.modal-card {
+  animation: modalSlideIn 0.2s ease-out;
+}
+@keyframes modalSlideIn {
+  from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ─── Status Card ──────────────────────────────────────── */
+.status-card {
+  transition: opacity 0.2s ease;
+}
