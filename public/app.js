@@ -422,11 +422,12 @@ async function runE2() {
   const btnId = 'e2-btn';
   setLoading(btnId, true);
   showResult('e2-result', '');
+  setExperimentState('e2', 'running');
   const startTime = performance.now();
   try {
     const { base64, mimeType } = await getFileData('e2-file');
 const { apiKey, visionModel, model, currency } = getSettings();
-    
+
 
     const res = await fetch('/api/verdict', {
       method: 'POST',
@@ -455,9 +456,11 @@ const { apiKey, visionModel, model, currency } = getSettings();
       result: { verdict: data.verdict, reason: data.reason, reasoning: data.reasoning },
       receipt: { filename: window.APP.state.getReceipt()?.filename },
     })
+    setExperimentState('e2', 'complete');
     saveCurrentTabState();
     updateTabRunCounts();
   } catch (e) {
+    setExperimentState('e2', 'error');
     showError('e2-result', e.message);
   } finally {
     setLoading(btnId, false);
@@ -467,14 +470,17 @@ const { apiKey, visionModel, model, currency } = getSettings();
 // ─── E3: CoT Verdict ─────────────────────────────────────────────────────────
 
 async function runE3() {
-  const btnId = 'e3-btn';
-  setLoading(btnId, true);
-  showResult('e3-result', '');
+  const fileInput = document.getElementById('e3-file')
+  const file = fileInput.files[0]
+  if (!file) return showError('e3-result', 'Please select a receipt file')
+
+  setExperimentState('e3', 'running')
+  showResult('e3-result', '<p class="text-sm text-gray-500">Reasoning through policy...</p>')
   const startTime = performance.now();
   try {
     const { base64, mimeType } = await getFileData('e3-file');
 const { apiKey, visionModel, model, currency } = getSettings();
-    
+
 
     const res = await fetch('/api/verdict', {
       method: 'POST',
@@ -508,12 +514,12 @@ const { apiKey, visionModel, model, currency } = getSettings();
       result: { verdict: data.verdict, reason: data.reason, reasoning: data.reasoning },
       receipt: { filename: window.APP.state.getReceipt()?.filename },
     })
+    setExperimentState('e3', 'complete')
     saveCurrentTabState();
     updateTabRunCounts();
   } catch (e) {
+    setExperimentState('e3', 'error')
     showError('e3-result', e.message);
-  } finally {
-    setLoading(btnId, false);
   }
 }
 
@@ -522,6 +528,7 @@ const { apiKey, visionModel, model, currency } = getSettings();
 async function runE4() {
   const btnId = 'e4-btn';
   setLoading(btnId, true);
+  setExperimentState('e4', 'running');
   showResult('e4-result', '');
   const startTime = performance.now();
   try {
@@ -538,7 +545,10 @@ async function runE4() {
       }),
     });
     const data = await res.json();
-    if (data.error) return showError('e4-result', data.error);
+    if (data.error) {
+      setExperimentState('e4', 'error');
+      return showError('e4-result', data.error);
+    }
     const duration = ((performance.now() - startTime) / 1000).toFixed(1);
     const policy = document.getElementById('e4-policy')?.value;
     const metaHtml = buildMetaHtml({ model, visionModel, policy, duration });
@@ -562,9 +572,11 @@ async function runE4() {
       result: { phases: data.phases },
       receipt: { filename: window.APP.state.getReceipt()?.filename },
     })
+    setExperimentState('e4', 'complete');
     saveCurrentTabState();
     updateTabRunCounts();
   } catch (e) {
+    setExperimentState('e4', 'error');
     showError('e4-result', e.message);
   } finally {
     setLoading(btnId, false);
@@ -576,8 +588,7 @@ async function runE4() {
 
 async function runE5() {
   const btnId = 'e5-btn';
-  setLoading(btnId, true);
-  showResult('e5-result', '');
+  setExperimentState('e5', 'running');
   const startTime = performance.now();
   try {
     const { base64, mimeType } = await getFileData('e5-file');
@@ -626,19 +637,22 @@ async function runE5() {
     })
     saveCurrentTabState();
     updateTabRunCounts();
+    setExperimentState('e5', 'complete');
   } catch (e) {
+    setExperimentState('e5', 'error');
     showError('e5-result', e.message);
-  } finally {
-    setLoading(btnId, false);
   }
 }
 
 // ─── E6: Adversarial ─────────────────────────────────────────────────────────
 
 async function runE6() {
-  const btnId = 'e6-btn';
-  setLoading(btnId, true);
-  showResult('e6-result', '');
+  const fileInput = document.getElementById('e6-file')
+  if (!fileInput.files[0]) return showError('e6-result', 'Please select a receipt file')
+
+  setExperimentState('e6', 'running')
+  showResult('e6-result', '<p class="text-sm text-gray-500">Testing against all policy variants...</p>')
+
   const startTime = performance.now();
   try {
     const { base64, mimeType } = await getFileData('e6-file');
@@ -654,7 +668,10 @@ async function runE6() {
       }),
     });
     const data = await res.json();
-    if (data.error) return showError('e6-result', data.error);
+    if (data.error) {
+      setExperimentState('e6', 'error')
+      return showError('e6-result', data.error);
+    }
 
     const duration = ((performance.now() - startTime) / 1000).toFixed(1);
     const phase = document.getElementById('e6-phase')?.value;
@@ -680,17 +697,22 @@ async function runE6() {
           </div>`).join('')}
       </div>
       ${metaHtml}`);
+    ResultsStore.set('e6', {
+      config: { model, visionModel, phase: parseInt(phase), currency },
+      policies: data.policies,
+      duration,
+    });
     ResultsStore.addResult('e6', {
       config: { model, visionModel, phase: parseInt(phase) },
       result: { policies: data.policies },
       receipt: { filename: window.APP.state.getReceipt()?.filename },
     })
+    setExperimentState('e6', 'complete')
     saveCurrentTabState();
     updateTabRunCounts();
   } catch (e) {
+    setExperimentState('e6', 'error')
     showError('e6-result', e.message);
-  } finally {
-    setLoading(btnId, false);
   }
 }
 
