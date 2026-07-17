@@ -1277,10 +1277,15 @@ function getE1CachedExtraction(filename) {
   try {
     const fn = filename || window.APP?.state?.getReceipt?.()?.filename;
     if (!fn) return null;
+
+    const autoKey = `psa_e1_auto_${fn}`;
+    const autoRaw = sessionStorage.getItem(autoKey);
+    if (autoRaw) return JSON.parse(autoRaw);
+
     const results = ResultsStore.getResults('e1');
-    const match = results.slice().reverse().find(r => r.config?.filename === fn);
-    if (match && match.result) return match.result;
-    
+    const match = results.slice().reverse().find(r => r.config?.filename === fn || r.receipt?.filename === fn);
+    if (match && (match.result || match.extraction)) return match.result || match.extraction;
+
     const single = ResultsStore.get('e1');
     if (single && (single.filename === fn || single.config?.filename === fn)) {
       return single.result || single.extraction;
@@ -1288,6 +1293,48 @@ function getE1CachedExtraction(filename) {
     return null;
   } catch {
     return null;
+  }
+}
+
+async function autoFetchE1ForAnnotation(filename) {
+  if (!filename) return null;
+
+  const existing = getE1CachedExtraction(filename);
+  if (existing) return existing;
+
+  const lockKey = `psa_e1_fetching_${filename}`;
+  if (sessionStorage.getItem(lockKey)) return null;
+  sessionStorage.setItem(lockKey, '1');
+
+  try {
+    const imgRes = await fetch(`/api/receipts/${encodeURIComponent(filename)}`);
+    if (!imgRes.ok) throw new Error(`Failed to fetch receipt: ${imgRes.status}`);
+    const blob = await imgRes.blob();
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+    const mimeType = blob.type || 'image/jpeg';
+
+    const { apiKey, visionModel } = getSettings();
+
+    const extractRes = await fetch('/api/extract', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ base64, mimeType, apiKey, model: visionModel }),
+    });
+    const data = await extractRes.json();
+    if (data.error) throw new Error(data.error);
+
+    sessionStorage.setItem(`psa_e1_auto_${filename}`, JSON.stringify(data.extraction));
+    return data.extraction;
+  } catch (e) {
+    console.warn('autoFetchE1 failed:', e.message);
+    return null;
+  } finally {
+    sessionStorage.removeItem(lockKey);
   }
 }
 

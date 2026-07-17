@@ -65,14 +65,14 @@
       </div>
 
       <div class="action-row">
-        <a href="#" class="btn-outline">
+        <button id="btn-research-design" class="btn-outline" type="button">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
           Research Design
-        </a>
-        <a href="#" class="btn-outline">
+        </button>
+        <button id="btn-practical-example" class="btn-outline" type="button">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           Practical Example
-        </a>
+        </button>
       </div>
 
       <!-- ─── Section 2: KPI strip ─── -->
@@ -128,6 +128,8 @@
             <h3>Receipt Review</h3>
             <span class="pill pill--green"><span class="status-dot is-complete" style="margin: 0;"></span>Live preview</span>
           </div>
+
+          <div id="receipt-display-name" style="font-size: 15px; font-weight: 600; color: var(--ink); margin: 0 0 16px; padding-bottom: 8px; border-bottom: 1px dashed var(--rule);">—</div>
 
           <div class="pagination">
             <button class="btn-outline" id="btn-prev" type="button">
@@ -319,6 +321,9 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
               Save Annotation
             </button>
+            <button class="btn-outline" type="button" id="btn-skip-receipt" style="min-width: 140px; border-color: #cbd5e1; color: var(--ink-soft);">
+              Skip Receipt
+            </button>
             <div id="save-feedback" class="save-feedback" style="display: none;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
               <span>Annotation will be saved to <code style="background: var(--bg-soft); padding: 1px 4px; border-radius: 3px; font-size: 11px;">data/annotations/ground_truth.json</code></span>
@@ -466,12 +471,30 @@
           $('receipt-source-display').textContent = 'Repository';
           $('receipt-status-pill').textContent = 'Not loaded';
           $('receipt-status-pill').className = 'pill pill--mute';
+          $('receipt-display-name').textContent = '—';
           return;
         }
 
         $('receipt-filename-display').textContent = filename;
         $('receipt-filetype-display').textContent = fileTypeFor(filename);
         $('receipt-source-display').textContent = 'Repository';
+
+        // Set primary display name (e.g. Chatter — 7 October 2025 — EUR 48.50)
+        const ann = (typeof _annotations !== 'undefined') ? _annotations.find(a => a.filename === filename) : null;
+        const e1 = (typeof getE1CachedExtraction === 'function') ? getE1CachedExtraction(filename) : null;
+        const vendor = (ann && ann.vendor) || (e1 && e1.vendor);
+        const date = (ann && ann.date) || (e1 && e1.date);
+        const amount = (ann && ann.amount) || (e1 && e1.amount);
+        const currency = (ann && ann.currency) || (e1 && e1.currency);
+        if (vendor || date || amount) {
+          const parts = [];
+          if (vendor) parts.push(vendor);
+          if (date) parts.push(date);
+          if (amount) parts.push(`${currency || ''} ${amount}`);
+          $('receipt-display-name').textContent = parts.join(' — ');
+        } else {
+          $('receipt-display-name').textContent = filename;
+        }
 
         const parsed = parseFilenameDate(filename);
         $('receipt-uploaded-display').textContent = parsed
@@ -557,9 +580,8 @@
           return;
         }
 
-        const e1 = (typeof ResultsStore !== 'undefined') ? ResultsStore.get('e1') : null;
-        const e1Matches = e1 && (!e1.filename || e1.filename === filename) && e1.extraction;
-        if (e1Matches) {
+        const e1 = (typeof getE1CachedExtraction === 'function') ? getE1CachedExtraction(filename) : null;
+        if (e1) {
           $('summary-e1').innerHTML = '<span class="pill pill--green">Populated</span>';
           $('ai-status-pill').textContent = 'Populated';
           $('ai-status-pill').className = 'pill pill--green';
@@ -584,32 +606,62 @@
         }
       }
 
-      function loadAiExtraction(filename) {
+      async function loadAiExtraction(filename) {
         const ids = ['ai-vendor','ai-date','ai-amount','ai-currency','ai-category'];
         if (!filename) {
           ids.forEach(id => $(id).textContent = '—');
           return;
         }
-        const e1 = (typeof ResultsStore !== 'undefined') ? ResultsStore.get('e1') : null;
-        const matches = e1 && (!e1.filename || e1.filename === filename) && e1.extraction;
-        if (!matches) {
+        let e1 = (typeof getE1CachedExtraction === 'function') ? getE1CachedExtraction(filename) : null;
+        if (!e1) {
+          $('ai-status-pill').textContent = 'Fetching…';
+          $('ai-status-pill').className = 'pill pill--blue';
+          $('summary-e1').innerHTML = '<span class="pill pill--blue">Fetching…</span>';
+          ids.forEach(id => $(id).textContent = '…');
+          if (typeof autoFetchE1ForAnnotation === 'function') {
+            e1 = await autoFetchE1ForAnnotation(filename);
+          }
+        }
+        if (!e1) {
           ids.forEach(id => $(id).textContent = '—');
+          $('ai-status-pill').textContent = 'Not run';
+          $('ai-status-pill').className = 'pill pill--mute';
+          $('summary-e1').innerHTML = '<span class="pill pill--mute">Not run</span>';
           return;
         }
-        const ex = e1.extraction;
-        $('ai-vendor').textContent = ex.vendor || '—';
-        $('ai-date').textContent = ex.date || '—';
-        $('ai-amount').textContent = (ex.amount != null && ex.amount !== '') ? ex.amount : '—';
-        $('ai-currency').textContent = ex.currency || '—';
-        $('ai-category').textContent = ex.category || '—';
+        $('ai-vendor').textContent = e1.vendor || '—';
+        $('ai-date').textContent = e1.date || '—';
+        $('ai-amount').textContent = (e1.amount != null && e1.amount !== '') ? e1.amount : '—';
+        $('ai-currency').textContent = e1.currency || '—';
+        $('ai-category').textContent = e1.category || '—';
+        $('ai-status-pill').textContent = 'Populated';
+        $('ai-status-pill').className = 'pill pill--green';
+        $('summary-e1').innerHTML = '<span class="pill pill--green">Populated</span>';
       }
 
-      function loadReceipt(filename) {
+      async function loadReceipt(filename) {
         loadReceiptImage(filename);
         loadReceiptMetadata(filename);
-        loadAiExtraction(filename);
+        await loadAiExtraction(filename);
         updateSummaryPanel(filename);
         updateReceiptCounter();
+        repopulateWorkspaceForm(filename);
+      }
+
+      function repopulateWorkspaceForm(filename) {
+        if (!filename) return;
+        const ann = (typeof _annotations !== 'undefined') ? _annotations.find(a => a.filename === filename) : null;
+        if (ann) return;
+        const e1 = (typeof getE1CachedExtraction === 'function') ? getE1CachedExtraction(filename) : null;
+        if (!e1) return;
+        if (typeof showAnnStatus === 'function') {
+          showAnnStatus('new', `New annotation. Fields pre-populated from E1 extraction — review and correct as needed.`);
+        }
+        $('ann-vendor').value = e1.vendor || '';
+        $('ann-date').value = e1.date || '';
+        $('ann-amount').value = (e1.amount != null && e1.amount !== '') ? e1.amount : '';
+        $('ann-currency').value = e1.currency || '';
+        $('ann-category').value = e1.category || 'other';
       }
 
       function clearForm() {
@@ -638,8 +690,7 @@
         if (sel && !sel._gtHooked) {
           sel._gtHooked = true;
           sel.addEventListener('change', () => {
-            loadReceipt(sel.value);
-            loadKpiStats();
+            loadAnnotation();
           });
         }
         const initial = sel && sel.value
@@ -688,6 +739,70 @@
         }
         if (next && typeof nextReceipt === 'function') {
           next.addEventListener('click', () => nextReceipt());
+        }
+        const rdBtn = $('btn-research-design');
+        if (rdBtn) {
+          rdBtn.addEventListener('click', () => {
+            showModal('Ground Truth Annotation — Research Design', `
+              <div style="font-family: var(--font-sans); color: var(--ink); line-height: 1.6; max-width: 650px;">
+                <p style="margin: 0 0 16px; font-weight: 500; font-size: 14px;">Create a reliable human-reviewed reference dataset against which model extraction and compliance-reasoning outputs can be evaluated.</p>
+                <h4 style="margin: 16px 0 6px; font-weight: 700; font-size: 12px; text-transform: uppercase; color: var(--ink-soft); letter-spacing: 0.05em;">Technical Uncertainty</h4>
+                <p style="margin: 0 0 12px; font-size: 13px; color: var(--ink-soft);">Human annotations may be inconsistent where source documents are unclear, policy terms are ambiguous or reviewers interpret evidence differently. It is therefore uncertain whether a single annotation is sufficient for all cases and whether disagreement between reasonable reviewers must be recorded as part of the dataset.</p>
+                <h4 style="margin: 16px 0 6px; font-weight: 700; font-size: 12px; text-transform: uppercase; color: var(--ink-soft); letter-spacing: 0.05em;">Hypothesis</h4>
+                <p style="margin: 0 0 12px; font-size: 13px; color: var(--ink-soft);">A structured annotation process that records corrected transaction data, human verdicts, reasons and ambiguity indicators will produce a sufficiently reliable benchmark for evaluating the model across the research programme.</p>
+                <h4 style="margin: 16px 0 6px; font-weight: 700; font-size: 12px; text-transform: uppercase; color: var(--ink-soft); letter-spacing: 0.05em;">Annotation Method</h4>
+                <ol style="margin: 0 0 12px; padding-left: 20px; font-size: 13px; color: var(--ink-soft);">
+                  <li>Inspect the source document.</li>
+                  <li>Review the fields extracted by E1.</li>
+                  <li>Correct any extraction errors.</li>
+                  <li>Apply the relevant policy and context.</li>
+                  <li>Assign a human verdict.</li>
+                  <li>Record the principal reason.</li>
+                  <li>Identify ambiguity where reasonable disagreement may exist.</li>
+                  <li>Save the completed annotation with reviewer and timestamp metadata.</li>
+                </ol>
+                <h4 style="margin: 16px 0 6px; font-weight: 700; font-size: 12px; text-transform: uppercase; color: var(--ink-soft); letter-spacing: 0.05em;">Quality Controls</h4>
+                <ul style="margin: 0 0 12px; padding-left: 20px; font-size: 13px; color: var(--ink-soft);">
+                  <li>Required verdict reason</li>
+                  <li>Reviewer identification</li>
+                  <li>Save timestamp</li>
+                  <li>Change history</li>
+                  <li>Ambiguity flag</li>
+                  <li>Secondary review for disputed cases</li>
+                  <li>Prevention of silent overwriting</li>
+                </ul>
+                <h4 style="margin: 16px 0 6px; font-weight: 700; font-size: 12px; text-transform: uppercase; color: var(--ink-soft); letter-spacing: 0.05em;">Evaluation Use</h4>
+                <p style="margin: 0; font-size: 13px; color: var(--ink-soft);">The completed ground truth dataset is used to calculate: OCR field accuracy, verdict agreement, false positives, false negatives, ambiguity-recognition performance, hallucination indicators, and overall experiment-to-experiment improvement.</p>
+              </div>
+            `);
+          });
+        }
+        const peBtn = $('btn-practical-example');
+        if (peBtn) {
+          peBtn.addEventListener('click', () => {
+            showModal('Ground Truth Annotation — Practical Example', `
+              <div style="font-family: var(--font-sans); color: var(--ink); line-height: 1.6; max-width: 650px;">
+                <h4 style="margin: 0 0 6px; font-weight: 700; font-size: 12px; text-transform: uppercase; color: var(--ink-soft); letter-spacing: 0.05em;">What Happens</h4>
+                <ol style="margin: 0 0 16px; padding-left: 20px; font-size: 13px; color: var(--ink-soft);">
+                  <li>The reviewer selects a cloud-hosting receipt.</li>
+                  <li>The system loads the receipt preview.</li>
+                  <li>E1 extraction populates the vendor, date, amount, currency and category.</li>
+                  <li>The reviewer corrects any inaccurate fields.</li>
+                  <li>The reviewer assesses the expense against the applicable policy and project context.</li>
+                  <li>The reviewer selects <strong>Justified</strong>, <strong>Suspicious</strong> or <strong>Unclear</strong>.</li>
+                  <li>The reviewer records the primary reason and any ambiguity.</li>
+                  <li>The annotation is saved to the ground truth dataset.</li>
+                  <li>The model verdict from E2–E6 can then be compared with the human result.</li>
+                </ol>
+                <h4 style="margin: 16px 0 6px; font-weight: 700; font-size: 12px; text-transform: uppercase; color: var(--ink-soft); letter-spacing: 0.05em;">Practical Success</h4>
+                <p style="margin: 0 0 16px; font-size: 13px; color: var(--ink-soft);">The saved annotation accurately represents the source document, the applicable policy and the considered human compliance judgement.</p>
+                <h4 style="margin: 16px 0 6px; font-weight: 700; font-size: 12px; text-transform: uppercase; color: var(--ink-soft); letter-spacing: 0.05em;">Practical Failure</h4>
+                <p style="margin: 0 0 16px; font-size: 13px; color: var(--ink-soft);">The reviewer cannot see the receipt, extracted values fail to load, an existing annotation is not populated, required reasoning is omitted or the system saves an incomplete result without warning.</p>
+                <h4 style="margin: 16px 0 6px; font-weight: 700; font-size: 12px; text-transform: uppercase; color: var(--ink-soft); letter-spacing: 0.05em;">Why This Matters</h4>
+                <p style="margin: 0; font-size: 13px; color: var(--ink-soft);">A model may produce a convincing verdict that is nevertheless wrong. Ground truth annotation provides the trusted reference needed to distinguish genuine model performance from plausible but unsupported output.</p>
+              </div>
+            `);
+          });
         }
         const saveBtn = $('btn-save-annotation');
         if (saveBtn && typeof saveAnnotation === 'function') {
