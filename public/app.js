@@ -127,6 +127,48 @@ async function loadSettings() {
     if (cfg.apiKey && !_apiKey) { _apiKey = cfg.apiKey; apikeyEl.value = cfg.apiKey; }
     if (cfg.currency && currencyEl && !currencyEl.value) currencyEl.value = cfg.currency;
   } catch (_) {}
+
+  populateStStatusSummary();
+}
+
+function populateStStatusSummary() {
+  const summaryEl = document.getElementById('st-status-summary');
+  if (!summaryEl) return;
+  const { model, visionModel, apiKey } = getSettings();
+  const hasSaved = !!localStorage.getItem('psa_settings');
+  const statusLabel = document.getElementById('st-status-label');
+  const visionLabel = document.getElementById('st-vision-label');
+  const modelLabel = document.getElementById('st-model-label');
+  const connLabel = document.getElementById('st-connection-label');
+  if (statusLabel) {
+    statusLabel.textContent = hasSaved ? 'Saved' : 'Not saved';
+    statusLabel.className = hasSaved
+      ? 'font-medium text-green-700'
+      : 'font-medium text-amber-700';
+  }
+  if (visionLabel) visionLabel.textContent = visionModel || '—';
+  if (modelLabel) modelLabel.textContent = model || '—';
+  if (connLabel) {
+    connLabel.textContent = apiKey ? 'Key present' : 'No key';
+    connLabel.className = apiKey ? 'text-gray-700' : 'text-gray-500';
+  }
+  summaryEl.classList.remove('hidden');
+}
+
+function showPageGuide() {
+  showModal('ST: Research Configuration — Page Guide', `<div class="space-y-3">
+    <p>This page controls the technical environment under which Experiments E1–E6 are executed, compared and reproduced.</p>
+    <h4 class="font-medium">OpenRouter API Key</h4>
+    <p>Authenticates requests to the model provider. Stored in browser local storage. Re-enter after switching browsers or clearing data.</p>
+    <h4 class="font-medium">Vision Model (Layer 1)</h4>
+    <p>Used for OCR extraction in E1. Changing this may alter E1 output and affect all downstream experiments.</p>
+    <h4 class="font-medium">Reasoning Model (Layer 3)</h4>
+    <p>Used for policy interpretation and verdicts in E2–E6. Switching models enables controlled comparison.</p>
+    <h4 class="font-medium">Currency Override</h4>
+    <p>Controls whether receipt currency or a forced currency is used in experiment prompts.</p>
+    <h4 class="font-medium">Research Control</h4>
+    <p>Configuration changes apply only to future experiment runs. Every completed run retains the exact configuration used when executed.</p>
+  </div>`)
 }
 
 function isValidApiKey(k) {
@@ -155,11 +197,17 @@ async function saveSettings() {
     body: JSON.stringify({ model, visionModel, currency }),
   });
   showResult('settings-result', '<span class="text-green-600">✓ Settings saved</span>');
+  populateStStatusSummary();
 }
 
 async function testConnection() {
   const { apiKey, model } = getSettings();
   showResult('settings-result', '<span class="text-gray-500">Testing…</span>');
+  const connLabel = document.getElementById('st-connection-label');
+  if (connLabel) {
+    connLabel.textContent = 'Testing…';
+    connLabel.className = 'text-gray-500';
+  }
   try {
     const res = await fetch('/api/test-connection', {
       method: 'POST',
@@ -167,10 +215,25 @@ async function testConnection() {
       body: JSON.stringify({ apiKey: apiKey || '', model }),
     });
     const data = await res.json();
-    if (data.ok) showResult('settings-result', `<span class="text-green-600">✓ Connected — model replied: "${data.response}"</span>`);
-    else showError('settings-result', data.error || 'Connection failed');
+    if (data.ok) {
+      showResult('settings-result', `<span class="text-green-600">✓ Connected — model replied: "${data.response}"</span>`);
+      if (connLabel) {
+        connLabel.textContent = 'Verified';
+        connLabel.className = 'text-green-700 font-medium';
+      }
+    } else {
+      showError('settings-result', data.error || 'Connection failed');
+      if (connLabel) {
+        connLabel.textContent = 'Failed';
+        connLabel.className = 'text-red-600 font-medium';
+      }
+    }
   } catch (e) {
     showError('settings-result', e.message);
+    if (connLabel) {
+      connLabel.textContent = 'Failed';
+      connLabel.className = 'text-red-600 font-medium';
+    }
   }
 }
 
@@ -387,7 +450,7 @@ async function runE1() {
     const { apiKey, visionModel } = getSettings()
     const result = await apiPost('/api/extract', { base64, mimeType, apiKey, model: visionModel })
 
-    ResultsStore.set('e1', { extraction: result.extraction, visionModel })
+    ResultsStore.set('e1', { extraction: result.extraction, visionModel, filename: file.name })
     setExperimentState('e1', 'complete')
     renderE1Result(result.extraction)
   } catch (err) {
@@ -731,30 +794,176 @@ async function initAnnotate() {
       fetch('/api/annotations').then(r => r.json()),
     ]);
     const sel = document.getElementById('ann-file');
-    sel.innerHTML = _receipts.map(f => `<option value="${escHtml(f)}">${escHtml(f)}</option>`).join('');
+    sel.innerHTML = '<option value="">Select a receipt...</option>' +
+      _receipts.map(f => `<option value="${escHtml(f)}">${escHtml(f)}</option>`).join('');
+    updateAnnCounter();
     loadAnnotation();
   } catch (e) {
     showError('ann-result', `Failed to load receipts: ${e.message}`);
   }
 }
 
+function updateAnnCounter() {
+  const sel = document.getElementById('ann-file');
+  const counter = document.getElementById('ann-counter');
+  if (!sel || !counter) return;
+  const total = _receipts.length;
+  const value = sel.value;
+  if (!value) {
+    counter.textContent = total ? `0 of ${total}` : '—';
+    return;
+  }
+  const idx = _receipts.indexOf(value);
+  counter.textContent = idx >= 0 ? `Receipt ${idx + 1} of ${total}` : '—';
+}
+
+function prevReceipt() {
+  if (!_receipts.length) return;
+  const sel = document.getElementById('ann-file');
+  const value = sel.value;
+  let idx = value ? _receipts.indexOf(value) : 0;
+  idx = idx <= 0 ? _receipts.length - 1 : idx - 1;
+  sel.value = _receipts[idx];
+  loadAnnotation();
+}
+
+function nextReceipt() {
+  if (!_receipts.length) return;
+  const sel = document.getElementById('ann-file');
+  const value = sel.value;
+  let idx = value ? _receipts.indexOf(value) : -1;
+  idx = idx >= _receipts.length - 1 ? 0 : idx + 1;
+  sel.value = _receipts[idx];
+  loadAnnotation();
+}
+
+function showAnnPreview(filename) {
+  const img = document.getElementById('ann-preview');
+  const empty = document.getElementById('ann-preview-empty');
+  if (!img || !empty) return;
+  if (!filename) {
+    img.src = '';
+    img.classList.add('hidden');
+    empty.classList.remove('hidden');
+    empty.textContent = 'Select a receipt to preview';
+    return;
+  }
+  const ext = filename.toLowerCase().split('.').pop();
+  if (ext === 'pdf') {
+    img.classList.add('hidden');
+    empty.classList.remove('hidden');
+    empty.innerHTML = `<a href="/api/receipts/${encodeURIComponent(filename)}" target="_blank" class="text-blue-600 underline">Open PDF: ${escHtml(filename)}</a>`;
+    return;
+  }
+  empty.classList.add('hidden');
+  img.classList.remove('hidden');
+  img.src = `/api/receipts/${encodeURIComponent(filename)}`;
+  img.alt = filename;
+}
+
+function showAnnStatus(kind, message) {
+  const el = document.getElementById('ann-status');
+  if (!el) return;
+  if (!kind) {
+    el.classList.add('hidden');
+    el.textContent = '';
+    return;
+  }
+  el.classList.remove('hidden');
+  el.classList.remove('bg-blue-50', 'border-blue-200', 'text-blue-700',
+    'bg-green-50', 'border-green-200', 'text-green-700',
+    'bg-red-50', 'border-red-200', 'text-red-700');
+  if (kind === 'existing') {
+    el.classList.add('bg-green-50', 'border-green-200', 'text-green-700');
+  } else if (kind === 'error') {
+    el.classList.add('bg-red-50', 'border-red-200', 'text-red-700');
+  } else {
+    el.classList.add('bg-blue-50', 'border-blue-200', 'text-blue-700');
+  }
+  el.textContent = message;
+}
+
+function getE1CachedExtraction() {
+  try {
+    const raw = sessionStorage.getItem('psa_single_results');
+    if (!raw) return null;
+    const map = JSON.parse(raw);
+    const e1 = map['e1'];
+    if (!e1 || !e1.extraction) return null;
+    const shared = window.APP?.state?.getReceipt?.();
+    if (shared && shared.filename && e1.filename && shared.filename !== e1.filename) {
+      return null;
+    }
+    return e1.extraction;
+  } catch {
+    return null;
+  }
+}
+
 function loadAnnotation() {
   const filename = document.getElementById('ann-file').value;
-  const ann = _annotations.find(a => a.filename === filename) || {};
-  document.getElementById('ann-vendor').value = ann.vendor || '';
-  document.getElementById('ann-date').value = ann.date || '';
-  document.getElementById('ann-amount').value = ann.amount || '';
-  document.getElementById('ann-currency').value = ann.currency || '';
-  document.getElementById('ann-category').value = ann.category || 'other';
-  document.getElementById('ann-verdict').value = ann.human_verdict || 'justified';
-  document.getElementById('ann-reason').value = ann.human_verdict_reason || '';
-  document.getElementById('ann-ambiguous').checked = ann.is_ambiguous || false;
-  document.getElementById('ann-notes').value = ann.notes || '';
+  updateAnnCounter();
   showResult('ann-result', '');
+
+  if (!filename) {
+    showAnnPreview(null);
+    showAnnStatus(null);
+    ['ann-vendor', 'ann-date', 'ann-amount', 'ann-currency', 'ann-reason', 'ann-notes']
+      .forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('ann-category').value = 'other';
+    document.getElementById('ann-verdict').value = 'justified';
+    document.getElementById('ann-ambiguous').checked = false;
+    return;
+  }
+
+  showAnnPreview(filename);
+
+  const ann = _annotations.find(a => a.filename === filename);
+  if (ann) {
+    showAnnStatus('existing', `Existing annotation loaded for ${filename}. Editing will overwrite the saved entry.`);
+    document.getElementById('ann-vendor').value = ann.vendor || '';
+    document.getElementById('ann-date').value = ann.date || '';
+    document.getElementById('ann-amount').value = ann.amount || '';
+    document.getElementById('ann-currency').value = ann.currency || '';
+    document.getElementById('ann-category').value = ann.category || 'other';
+    document.getElementById('ann-verdict').value = ann.human_verdict || 'justified';
+    document.getElementById('ann-reason').value = ann.human_verdict_reason || '';
+    document.getElementById('ann-ambiguous').checked = ann.is_ambiguous || false;
+    document.getElementById('ann-notes').value = ann.notes || '';
+    return;
+  }
+
+  const e1 = getE1CachedExtraction();
+  if (e1) {
+    showAnnStatus('new', `New annotation. Fields pre-populated from cached E1 extraction — review and correct as needed.`);
+    document.getElementById('ann-vendor').value = e1.vendor || '';
+    document.getElementById('ann-date').value = e1.date || '';
+    document.getElementById('ann-amount').value = (e1.amount != null && e1.amount !== '') ? e1.amount : '';
+    document.getElementById('ann-currency').value = e1.currency || '';
+    document.getElementById('ann-category').value = e1.category || 'other';
+  } else {
+    showAnnStatus('new', `New annotation. No E1 extraction cached — fill the fields manually from the receipt preview.`);
+    document.getElementById('ann-vendor').value = '';
+    document.getElementById('ann-date').value = '';
+    document.getElementById('ann-amount').value = '';
+    document.getElementById('ann-currency').value = '';
+    document.getElementById('ann-category').value = 'other';
+  }
+  document.getElementById('ann-verdict').value = 'justified';
+  document.getElementById('ann-reason').value = '';
+  document.getElementById('ann-ambiguous').checked = false;
+  document.getElementById('ann-notes').value = '';
 }
 
 async function saveAnnotation() {
   const filename = document.getElementById('ann-file').value;
+  if (!filename) {
+    return showError('ann-result', 'Select a receipt before saving.');
+  }
+  const reason = document.getElementById('ann-reason').value.trim();
+  if (!reason) {
+    return showError('ann-result', 'Verdict Reason is required. State the primary reason in one sentence.');
+  }
   const entry = {
     filename,
     vendor: document.getElementById('ann-vendor').value || null,
@@ -763,7 +972,7 @@ async function saveAnnotation() {
     currency: document.getElementById('ann-currency').value || null,
     category: document.getElementById('ann-category').value,
     human_verdict: document.getElementById('ann-verdict').value,
-    human_verdict_reason: document.getElementById('ann-reason').value || '',
+    human_verdict_reason: reason,
     is_ambiguous: document.getElementById('ann-ambiguous').checked,
     notes: document.getElementById('ann-notes').value || '',
   };
@@ -777,6 +986,7 @@ async function saveAnnotation() {
     if (!data.ok) throw new Error(data.error || 'Save failed');
     _annotations = _annotations.filter(a => a.filename !== filename);
     _annotations.push(entry);
+    showAnnStatus('existing', `Saved annotation for ${filename}. Re-edit anytime to update.`);
     showResult('ann-result', `<span class="text-green-600">✓ Saved ${escHtml(filename)}</span>`);
   } catch (e) {
     showError('ann-result', e.message);
@@ -858,6 +1068,72 @@ const ResultsStore = {
   get(prefix) {
     return this._getSingleMap()[prefix] || null
   },
+}
+
+// ─── Policy Meta Store (localStorage-backed) ───────────────────────────────
+
+const PolicyMetaStore = {
+  _KEY: 'psa_policy_meta',
+
+  _read() {
+    try {
+      const raw = localStorage.getItem(this._KEY)
+      return raw ? JSON.parse(raw) : {}
+    } catch { return {} }
+  },
+
+  _write(map) {
+    try {
+      localStorage.setItem(this._KEY, JSON.stringify(map))
+    } catch (e) {
+      console.warn('localStorage quota exceeded for policy meta', e.message)
+    }
+  },
+
+  getMeta(policyName) {
+    const all = this._read()
+    return all[policyName] || null
+  },
+
+  recordSave(policyName) {
+    const all = this._read()
+    const prev = all[policyName]
+    all[policyName] = {
+      version: prev ? PolicyMetaStore._bumpVersion(prev.version) : 'v1.0',
+      updatedAt: new Date().toISOString(),
+    }
+    this._write(all)
+    return all[policyName]
+  },
+
+  resetMeta(policyName) {
+    const all = this._read()
+    delete all[policyName]
+    this._write(all)
+  },
+
+  _bumpVersion(prev) {
+    const m = /^v(\d+)\.(\d+)$/.exec(prev || 'v1.0')
+    if (!m) return 'v1.0'
+    return `v${m[1]}.${parseInt(m[2], 10) + 1}`
+  },
+}
+
+function policyRunCount(policyName) {
+  const all = (typeof ResultsStore !== 'undefined' && ResultsStore.getAllResults) ? ResultsStore.getAllResults() : []
+  let count = 0
+  for (const r of all) {
+    if (r.config && r.config.policy === policyName) {
+      count += 1
+      continue
+    }
+    if (r.result && Array.isArray(r.result.policies)) {
+      for (const p of r.result.policies) {
+        if (p && p.policy === policyName) count += 1
+      }
+    }
+  }
+  return count
 }
 
 function downloadFile(content, filename, mimeType) {
@@ -1662,11 +1938,13 @@ async function loadPolicyEditor() {
       warning.classList.add('hidden')
     }
 
+    updatePolicyStatusSummary(name, 'Saved')
+
     const container = document.getElementById('pe-phases')
     container.innerHTML = policy.phases.map((phase, i) => `
-      <div class="border border-gray-200 rounded-lg p-4">
-        <h4 class="text-sm font-semibold text-gray-700 mb-2">Phase ${i + 1}</h4>
-        <div class="space-y-3">
+      <details class="border border-gray-200 rounded-lg mb-4" ${i === 0 ? 'open' : ''}>
+        <summary class="px-4 py-3 text-sm font-medium cursor-pointer hover:bg-gray-50">Phase ${i + 1}: ${escHtml(phase.name)}</summary>
+        <div class="px-4 py-3 border-t border-gray-200 space-y-3">
           <div>
             <label class="block text-xs font-medium text-gray-500 mb-0.5">Phase Name</label>
             <input type="text" class="pe-phase-name block w-full text-sm border border-gray-300 rounded px-3 py-1.5" value="${escHtml(phase.name)}">
@@ -1684,17 +1962,39 @@ async function loadPolicyEditor() {
               </div>
             </div>`).join('')}
         </div>
-      </div>
+      </details>
     `).join('')
   } catch (e) {
     showError('pe-result', `Failed to load policy: ${e.message}`)
   }
 }
 
+function updatePolicyStatusSummary(policyName, statusText) {
+  const meta = PolicyMetaStore.getMeta(policyName)
+  const statusEl = document.getElementById('pe-status-label')
+  const versionEl = document.getElementById('pe-version-label')
+  const updatedEl = document.getElementById('pe-updated-label')
+  const runsEl = document.getElementById('pe-runs-label')
+  if (!statusEl) return
+  statusEl.textContent = statusText || 'Saved'
+  statusEl.className = statusText === 'Unsaved changes' ? 'font-medium text-orange-600' : 'font-medium text-green-700'
+  versionEl.textContent = meta ? meta.version : 'v1.0'
+  updatedEl.textContent = meta ? new Date(meta.updatedAt).toLocaleString() : '—'
+  runsEl.textContent = String(policyRunCount(policyName))
+}
+
 async function savePolicy() {
   const name = document.getElementById('pe-policy').value
+  const reasonEl = document.getElementById('pe-change-reason')
+  const reason = (reasonEl && reasonEl.value || '').trim()
+  if (!reason) {
+    showError('pe-result', 'Reason for Change is required. Explain why this policy version is being modified before saving.')
+    if (reasonEl) reasonEl.focus()
+    return
+  }
+
   const phases = []
-  document.querySelectorAll('#pe-phases > div').forEach((phaseEl) => {
+  document.querySelectorAll('#pe-phases > details').forEach((phaseEl) => {
     const nameInput = phaseEl.querySelector('.pe-phase-name')
     const descInput = phaseEl.querySelector('.pe-phase-desc')
     const lists = {}
@@ -1728,6 +2028,9 @@ async function savePolicy() {
     })
     const result = await res.json()
     if (res.ok) {
+      PolicyMetaStore.recordSave(name)
+      if (reasonEl) reasonEl.value = ''
+      updatePolicyStatusSummary(name, 'Saved')
       showResult('pe-result', '<span class="text-green-600">✓ Policy saved</span>')
     } else {
       showError('pe-result', result.error + (result.details ? ': ' + result.details.join('; ') : ''))
@@ -1741,7 +2044,7 @@ function clearPolicyForm() {
   if (!confirm('Clear all policy fields? This empties the form but does NOT save. You must click Save to persist changes.')) return
   document.getElementById('pe-project-name').value = ''
   document.getElementById('pe-description').value = ''
-  const phases = document.querySelectorAll('#pe-phases > div')
+  const phases = document.querySelectorAll('#pe-phases > details')
   phases.forEach(phaseEl => {
     const nameInput = phaseEl.querySelector('.pe-phase-name')
     const descInput = phaseEl.querySelector('.pe-phase-desc')

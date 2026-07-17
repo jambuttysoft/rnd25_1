@@ -406,77 +406,131 @@
       </div>
     </div>
 
-    <!-- Annotate -->
+    <!-- GT: Ground Truth Annotation -->
     <div id="tab-annotate" class="tab-panel hidden">
-      <h2 class="text-lg font-semibold mb-1">Ground Truth Annotation</h2>
-      <p class="text-sm text-gray-500 mb-4">Annotate receipts with human verdicts for paper metrics. Data saved to <code>data/annotations/ground_truth.json</code>.</p>
-      <div class="bg-white rounded-lg border border-gray-200 p-6 space-y-4 max-w-lg">
-        <div>
-          <label class="block text-sm font-medium mb-1">Receipt</label>
-          <select id="ann-file" class="block w-full text-sm border border-gray-300 rounded px-3 py-2" onchange="loadAnnotation()"></select>
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="text-lg font-semibold">Ground Truth Annotation</h2>
+        <div class="flex gap-2">
+          <button onclick="showModal('Ground Truth Annotation — Research Design', RD_CONTENT_GT)" class="border border-gray-300 bg-white px-3 py-1.5 rounded text-xs font-medium hover:bg-gray-50">Research Design</button>
+          <button onclick="showModal('Ground Truth Annotation — Practical Example', PE_CONTENT_GT)" class="border border-gray-300 bg-white px-3 py-1.5 rounded text-xs font-medium hover:bg-gray-50">Practical Example</button>
         </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-sm font-medium mb-1">Vendor</label>
-            <input id="ann-vendor" type="text" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+      </div>
+      <p class="text-sm text-gray-500 mb-4">Record the human-reviewed compliance outcome for each receipt. These annotations form the reference dataset used to evaluate the accuracy, consistency and reliability of the Compliance Intelligence Engine across all experiments.</p>
+
+      <!-- Receipt Navigation -->
+      <div class="flex items-center gap-3 mb-4">
+        <select id="ann-file" class="block w-full text-sm border border-gray-300 rounded px-3 py-2 max-w-xs" onchange="loadAnnotation()">
+          <option value="">Select a receipt...</option>
+        </select>
+        <button onclick="prevReceipt()" class="border border-gray-300 bg-white px-3 py-1.5 rounded text-xs font-medium hover:bg-gray-50">&larr; Previous</button>
+        <button onclick="nextReceipt()" class="border border-gray-300 bg-white px-3 py-1.5 rounded text-xs font-medium hover:bg-gray-50">Next &rarr;</button>
+        <span id="ann-counter" class="text-xs text-gray-400">—</span>
+      </div>
+
+      <!-- Receipt Status -->
+      <div id="ann-status" class="hidden bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-700 mb-4"></div>
+
+      <!-- Main layout: Preview + Form side by side -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Receipt Preview -->
+        <div>
+          <div class="bg-white rounded-lg border border-gray-200 p-4 flex items-center justify-center min-h-[300px]">
+            <img id="ann-preview" src="" alt="Receipt preview" class="max-w-full max-h-[400px] object-contain hidden">
+            <p id="ann-preview-empty" class="text-sm text-gray-400">Select a receipt to preview</p>
           </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Date (YYYY-MM-DD)</label>
-            <input id="ann-date" type="text" placeholder="2025-10-07" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+        </div>
+
+        <!-- Annotation Form -->
+        <div class="space-y-4">
+          <!-- Extracted fields (auto-populated from E1) -->
+          <div class="bg-white rounded-lg border border-gray-200 p-4">
+            <h3 class="text-sm font-semibold mb-3">Extracted Information</h3>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium mb-1">Vendor</label>
+                <input id="ann-vendor" type="text" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+              </div>
+              <div>
+                <label class="block text-xs font-medium mb-1">Date (YYYY-MM-DD)</label>
+                <input id="ann-date" type="text" placeholder="2025-10-07" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+              </div>
+              <div>
+                <label class="block text-xs font-medium mb-1">Amount</label>
+                <input id="ann-amount" type="number" step="0.01" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+              </div>
+              <div>
+                <label class="block text-xs font-medium mb-1">Currency</label>
+                <input id="ann-currency" type="text" placeholder="EUR" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+              </div>
+            </div>
+            <div class="mt-3">
+              <label class="block text-xs font-medium mb-1">Category</label>
+              <select id="ann-category" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+                <option value="equipment">Equipment</option>
+                <option value="software">Software</option>
+                <option value="travel">Travel</option>
+                <option value="meals">Meals</option>
+                <option value="services">Services</option>
+                <option value="supplies">Supplies</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
           </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Amount</label>
-            <input id="ann-amount" type="number" step="0.01" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+
+          <!-- Human Assessment -->
+          <div class="bg-white rounded-lg border border-gray-200 p-4">
+            <h3 class="text-sm font-semibold mb-3">Human Compliance Assessment</h3>
+            <div>
+              <label class="block text-xs font-medium mb-1">Human Verdict</label>
+              <select id="ann-verdict" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+                <option value="justified">Justified</option>
+                <option value="suspicious">Suspicious</option>
+                <option value="unclear">Unclear</option>
+              </select>
+            </div>
+            <div class="mt-3">
+              <label class="block text-xs font-medium mb-1">Verdict Reason</label>
+              <input id="ann-reason" type="text" placeholder="State the primary reason for the human verdict in one clear sentence." class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+              <p class="text-xs text-gray-400 mt-1">Required. State the primary reason for the human verdict in one clear sentence.</p>
+            </div>
+            <div class="mt-3 flex items-center gap-2">
+              <input type="checkbox" id="ann-ambiguous" class="rounded">
+              <label for="ann-ambiguous" class="text-xs">Mark as ambiguous — reasonable reviewers could reach different conclusions</label>
+            </div>
+            <div class="mt-3">
+              <label class="block text-xs font-medium mb-1">Reviewer Notes</label>
+              <input id="ann-notes" type="text" placeholder="Record document-quality issues, unusual formatting, missing evidence..." class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
+            </div>
           </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Currency</label>
-            <input id="ann-currency" type="text" placeholder="EUR" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
-          </div>
+
+          <!-- Save -->
+          <button onclick="saveAnnotation()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50 w-full">Save Annotation</button>
+          <div id="ann-result" class="text-sm"></div>
         </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Category</label>
-          <select id="ann-category" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
-            <option value="equipment">Equipment</option>
-            <option value="software">Software</option>
-            <option value="travel">Travel</option>
-            <option value="meals">Meals</option>
-            <option value="services">Services</option>
-            <option value="supplies">Supplies</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Human Verdict</label>
-          <select id="ann-verdict" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
-            <option value="justified">Justified</option>
-            <option value="suspicious">Suspicious</option>
-            <option value="unclear">Unclear</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Verdict Reason (one sentence)</label>
-          <input id="ann-reason" type="text" class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
-        </div>
-        <div class="flex items-center gap-2">
-          <input type="checkbox" id="ann-ambiguous" class="rounded">
-          <label for="ann-ambiguous" class="text-sm">Mark as ambiguous (reasonable reviewers might disagree)</label>
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Notes</label>
-          <input id="ann-notes" type="text" placeholder="Quality issues, unusual format, etc." class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
-        </div>
-        <button onclick="saveAnnotation()"
-          class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700">
-          Save Annotation
-        </button>
-        <div id="ann-result" class="mt-2 text-sm"></div>
       </div>
     </div>
 
-    <!-- Policy Editor -->
+    <!-- Policy Editor (Research Support Module) -->
     <div id="tab-policy-editor" class="tab-panel hidden">
-      <h2 class="text-lg font-semibold mb-1">Policy Editor</h2>
-      <p class="text-sm text-gray-500 mb-4">Edit the expense policies used by all experiments. Changes take effect immediately.</p>
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="text-lg font-semibold">PE: Policy Editor</h2>
+        <div class="flex gap-2">
+          <button onclick="showModal('PE: Policy Editor — Research Design', RD_CONTENT_PE)" class="border border-gray-300 bg-white px-3 py-1.5 rounded text-xs font-medium hover:bg-gray-50">Research Design</button>
+          <button onclick="showModal('PE: Policy Editor — Practical Example', PE_CONTENT_PE)" class="border border-gray-300 bg-white px-3 py-1.5 rounded text-xs font-medium hover:bg-gray-50">Practical Example</button>
+        </div>
+      </div>
+      <p class="text-sm text-gray-500 mb-4">Edit the versioned policy inputs used by all experiments. This is a Research Support Module — not an experiment.</p>
+
+      <div class="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-700 mb-4">
+        <strong>Research Control:</strong> Saved policy changes apply only to future experiment runs. Existing experiment results remain linked to the exact policy version used when they were generated.
+      </div>
+
+      <div id="pe-status-summary" class="bg-gray-50 rounded-lg border border-gray-200 p-4 mb-4 grid grid-cols-2 gap-3 text-sm">
+        <div><span class="text-gray-500">Status:</span> <span id="pe-status-label" class="font-medium text-green-700">Saved</span></div>
+        <div><span class="text-gray-500">Version:</span> <span id="pe-version-label" class="font-medium">v1.0</span></div>
+        <div><span class="text-gray-500">Last Updated:</span> <span id="pe-updated-label" class="text-gray-700">—</span></div>
+        <div><span class="text-gray-500">Used in Runs:</span> <span id="pe-runs-label" class="text-gray-700">—</span></div>
+      </div>
 
       <div class="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
         <div>
@@ -502,8 +556,13 @@
           <textarea id="pe-description" rows="2" class="block w-full text-sm border border-gray-300 rounded px-3 py-2"></textarea>
         </div>
 
-        <div id="pe-phases" class="space-y-6">
-          <!-- 3 phase blocks generated by JS -->
+        <div id="pe-phases" class="space-y-4">
+          <!-- 3 phase blocks generated by JS, each wrapped in <details> -->
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Reason for Change</label>
+          <input id="pe-change-reason" type="text" placeholder="Explain why this policy version is being changed and what research input has been modified." class="block w-full text-sm border border-gray-300 rounded px-3 py-2">
         </div>
 
         <div class="flex gap-3 pt-2">
@@ -517,9 +576,26 @@
 
     <!-- Settings -->
     <div id="tab-settings" class="tab-panel hidden">
-      <h2 class="text-lg font-semibold mb-1">Settings</h2>
-      <p class="text-sm text-gray-500 mb-4">Configure the API key and models used for all experiments.</p>
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="text-lg font-semibold">ST: Research Configuration</h2>
+        <div class="flex gap-2">
+          <button onclick="showModal('ST: Research Configuration — Research Design', RD_CONTENT_ST)" class="border border-gray-300 bg-white px-3 py-1.5 rounded text-xs font-medium hover:bg-gray-50">Research Design</button>
+          <button onclick="showModal('ST: Research Configuration — Practical Example', PE_CONTENT_ST)" class="border border-gray-300 bg-white px-3 py-1.5 rounded text-xs font-medium hover:bg-gray-50">Practical Example</button>
+          <button onclick="showPageGuide()" class="border border-gray-300 bg-white px-3 py-1.5 rounded text-xs font-medium hover:bg-gray-50">Page Guide</button>
+        </div>
+      </div>
+      <p class="text-sm text-gray-500 mb-4">Configure the model-provider connection, experiment models, currency treatment and saved-result controls used across the research programme. Changes apply to future experiment runs and must be recorded to preserve reproducibility.</p>
+      <div id="st-status-summary" class="bg-gray-50 rounded-lg border border-gray-200 p-4 mb-4 grid grid-cols-2 gap-3 text-sm hidden">
+        <div><span class="text-gray-500">Status:</span> <span id="st-status-label" class="font-medium text-green-700">Saved</span></div>
+        <div><span class="text-gray-500">Connection:</span> <span id="st-connection-label" class="text-gray-700">—</span></div>
+        <div><span class="text-gray-500">Vision Model:</span> <span id="st-vision-label" class="text-gray-700">—</span></div>
+        <div><span class="text-gray-500">Reasoning Model:</span> <span id="st-model-label" class="text-gray-700">—</span></div>
+      </div>
       <div class="bg-white rounded-lg border border-gray-200 p-6 space-y-4 max-w-lg">
+        <div class="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-700 mb-4">
+          <strong>Research Control:</strong> Configuration changes apply only to future experiment runs. Every completed run retains the exact model, provider, currency treatment and configuration version used when it was executed.
+        </div>
+        <h3 class="text-sm font-semibold text-gray-700 mb-2">Experiment Configuration</h3>
         <div>
           <label class="block text-sm font-medium mb-1">OpenRouter API Key</label>
           <input type="password" id="s-apikey" placeholder="sk-or-..." autocomplete="off"

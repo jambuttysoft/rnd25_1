@@ -274,6 +274,29 @@ app.get('/api/receipts', (req, res) => {
 });
 
 
+// ─── GET /api/receipts/:filename ──────────────────────────────────────────────
+// Serve a single receipt image for the GT preview pane.
+// Validates the filename against the known list to prevent directory traversal.
+app.get('/api/receipts/:filename', (req, res) => {
+  try {
+    const files = readdirSync(RECEIPTS_DIR)
+      .filter(f => /\.(jpg|jpeg|png|pdf)$/i.test(f));
+    const requested = req.params.filename;
+    if (!files.includes(requested)) {
+      return res.status(404).json({ error: 'Receipt not found' });
+    }
+    const filePath = join(RECEIPTS_DIR, requested);
+    const ext = requested.toLowerCase().split('.').pop();
+    const mime = ext === 'png' ? 'image/png' : ext === 'pdf' ? 'application/pdf' : 'image/jpeg';
+    res.setHeader('Content-Type', mime);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.sendFile(filePath);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+
 // ─── GET /api/annotations ─────────────────────────────────────────────────────
 // Return all annotation records from ground_truth.json.
 app.get('/api/annotations', (req, res) => {
