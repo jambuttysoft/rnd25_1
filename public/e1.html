@@ -43,7 +43,85 @@
       <button id="receipt-clear-btn" style="color: var(--ink-faint); font-weight: 500; background: none; border: none; cursor: pointer;">✕ Clear</button>
     </div>
   </div>
-<main></main>
+
+  <main>
+    <div class="tab-content">
+      <header class="page-header">
+        <h2>E1: OCR Extraction Baseline</h2>
+        <p>Upload a receipt to evaluate the model's ability to accurately transform unstructured financial documents into structured accounting data for downstream compliance reasoning.</p>
+      </header>
+
+      <div class="action-row">
+        <button class="btn-outline" onclick="showExperimentInfo('e1')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Research Design
+        </button>
+        <button class="btn-outline" onclick="showExperimentInfo('e1-example')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Practical Example
+        </button>
+      </div>
+
+      <div class="work-area">
+        <div class="card">
+          <label class="field-label" for="e1-file">Receipt file (JPG, PNG, PDF)</label>
+          <input type="file" id="e1-file" class="file-input" accept="image/jpeg,image/png,image/jpg,application/pdf">
+          <button id="e1-btn" class="btn-primary" style="width: 100%; margin-top: 18px; justify-content: center;" onclick="runE1()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.31"/><path d="M14 2v7.31"/><path d="M8.5 2h7"/><path d="M14 12.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z"/><path d="M17 21H7a2 2 0 0 1-2-2v-6.18a2 2 0 0 1 .88-1.66l3-2.06a2 2 0 0 1 2.24 0l3 2.06a2 2 0 0 1 .88 1.66V19a2 2 0 0 1-2 2Z"/></svg>
+            Run Experiment
+          </button>
+          <p class="helper-text">Execute OCR extraction experiment</p>
+        </div>
+
+        <div class="info-sidebar">
+          <h3>About this experiment</h3>
+          <p>This experiment establishes a baseline for OCR extraction accuracy by capturing all structured information from real-world receipts without applying any policy reasoning.</p>
+        </div>
+      </div>
+
+      <div class="results-strip">
+        <div class="status-card" id="e1-status-card">
+          <div class="status-card__icon" id="e1-status-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="status-card__text">
+            <div class="status-card__title" id="e1-status-title">Baseline Complete</div>
+            <div class="status-card__desc" id="e1-status-desc">Upload a receipt file to start the baseline OCR extraction experiment.</div>
+          </div>
+        </div>
+
+        <div class="actions-card">
+          <h4>Actions</h4>
+          <div class="actions-row">
+            <button class="btn-outline" onclick="exportResultAsJSON('e1')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download JSON
+            </button>
+            <button class="btn-outline" onclick="exportResultAsCSV('e1')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              Download CSV
+            </button>
+            <button class="btn-outline" onclick="copyResultAsJSON('e1')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy JSON
+            </button>
+            <button class="btn-outline" onclick="showRawResponse('e1')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              View Raw Response
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-note">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span>Exports include the structured results. Use 'View Raw Response' to inspect the unformatted model output.</span>
+      </div>
+
+      <div id="e1-result" style="margin-top: 20px;"></div>
+    </div>
+  </main>
+
   <footer class="app-footer">
     <div class="app-footer__inner" style="justify-content: space-between; align-items: center;">
       <div class="footer-brand">

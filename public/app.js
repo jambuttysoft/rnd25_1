@@ -1192,22 +1192,63 @@ function exportResultAsJSON(experimentId) {
 
 // ─── Status Card ────────────────────────────────────────────────────────
 function setExperimentState(prefix, state) {
-  const readyEl = document.getElementById(`${prefix}-status-ready`)
-  const completeEl = document.getElementById(`${prefix}-status-complete`)
-  const statusCard = document.getElementById(`${prefix}-status`)
+  const statusCard = document.getElementById(`${prefix}-status-card`)
+  const icon = document.getElementById(`${prefix}-status-icon`)
+  const title = document.getElementById(`${prefix}-status-title`)
+  const desc = document.getElementById(`${prefix}-status-desc`)
   const btn = document.getElementById(`${prefix}-btn`)
   const resultEl = document.getElementById(`${prefix}-result`)
-  const actionsEl = document.getElementById(`${prefix}-actions`)
+
+  const copyBtn = document.querySelector(`[onclick="copyResultAsJSON('${prefix}')"]`)
+  const origCopyLabel = 'Copy JSON'
+  if (copyBtn && copyBtn.textContent.trim() !== origCopyLabel) copyBtn.textContent = origCopyLabel
+
   if (!statusCard) return
-  statusCard.classList.remove('hidden')
-  if (readyEl) readyEl.classList.toggle('hidden', state !== 'ready')
-  if (completeEl) completeEl.classList.toggle('hidden', state !== 'complete')
-  if (state === 'running') {
-    setLoading(btn.id, true); if (resultEl) resultEl.innerHTML = ''; if (actionsEl) actionsEl.classList.add('hidden')
-  } else {
-    setLoading(btn.id, false)
+  statusCard.classList.remove('status-card--ready', 'status-card--running', 'status-card--error')
+
+  const readyMap = {
+    e1: { title: 'Baseline Complete', desc: 'Upload a receipt file to start the baseline OCR extraction experiment.' },
+    e2: { title: 'Ready to Run', desc: 'Upload a receipt file and select the required policy variant and project phase to begin the direct policy reasoning baseline experiment.' },
+    e3: { title: 'Ready to Run', desc: 'Upload a receipt file and select the required policy variant and project phase to begin the structured reasoning evaluation experiment.' },
+    e4: { title: 'Ready to Run', desc: 'Upload a receipt file and select the required policy variant to test across all project phases.' },
+    e5: { title: 'Ready to Run', desc: 'Upload a receipt file and select the required policy variant and project phase to begin the ambiguity and uncertainty handling experiment.' },
+    e6: { title: 'Ready to Run', desc: 'Upload a receipt file and select the required project phase to run the adversarial test across all 3 policy variants.' },
   }
-  if (state === 'complete' && actionsEl) actionsEl.classList.remove('hidden')
+  const completeMap = {
+    e1: { title: 'Extraction Complete', desc: 'Structured accounting data has been successfully extracted.' },
+    e2: { title: 'Experiment Complete', desc: 'Direct policy reasoning baseline successfully executed.' },
+    e3: { title: 'Structured Reasoning Complete', desc: 'The transaction has been evaluated using a structured, policy-grounded reasoning process.' },
+    e4: { title: 'Context Evaluation Complete', desc: 'The transaction has been evaluated across every defined project phase and the context-sensitive results have been recorded.' },
+    e5: { title: 'Ambiguity Analysis Complete', desc: 'The transaction has been evaluated for ambiguity, missing evidence and confidence appropriateness.' },
+    e6: { title: 'Policy Stress Test Complete', desc: 'The transaction has been evaluated against the clear, vague and contradictory policy variants, and the comparative results have been recorded.' },
+  }
+
+  if (state === 'running') {
+    statusCard.classList.add('status-card--running')
+    if (title) title.textContent = 'Running…'
+    if (desc) desc.textContent = 'The experiment is currently executing.'
+    if (icon) icon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>'
+    if (btn) setLoading(btn.id, true)
+    if (resultEl) resultEl.innerHTML = ''
+  } else if (state === 'complete') {
+    const m = completeMap[prefix] || { title: 'Complete', desc: 'The experiment completed successfully.' }
+    if (title) title.textContent = m.title
+    if (desc) desc.textContent = m.desc
+    if (icon) icon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+    if (btn) setLoading(btn.id, false)
+  } else if (state === 'error') {
+    statusCard.classList.add('status-card--error')
+    if (title) title.textContent = 'Error'
+    if (desc) desc.textContent = 'The experiment failed. Check the error message below.'
+    if (icon) icon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+    if (btn) setLoading(btn.id, false)
+  } else {
+    const m = readyMap[prefix] || { title: 'Ready to Run', desc: 'Upload a receipt file to begin.' }
+    if (title) title.textContent = m.title
+    if (desc) desc.textContent = m.desc
+    if (icon) icon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+    if (btn) setLoading(btn.id, false)
+  }
 }
 
 // ─── Result Actions ──────────────────────────────────────────────────────
@@ -1293,6 +1334,18 @@ function renderMetaHTML(meta) {
 }
 
 function showExperimentInfo(tabName) {
+  if (tabName === 'e1') return showModal('E1: OCR Extraction Baseline — Research Design', RD_CONTENT_E1)
+  if (tabName === 'e1-example') return showModal('E1: OCR Extraction Baseline — Practical Example', PE_CONTENT_E1)
+  if (tabName === 'e2') return showModal('E2: Direct Policy Reasoning Baseline — Research Design', RD_CONTENT_E2)
+  if (tabName === 'e2-example') return showModal('E2: Direct Policy Reasoning Baseline — Practical Example', PE_CONTENT_E2)
+  if (tabName === 'e3') return showModal('E3: Structured Reasoning Evaluation — Research Design', RD_CONTENT_E3)
+  if (tabName === 'e3-example') return showModal('E3: Structured Reasoning Evaluation — Practical Example', PE_CONTENT_E3)
+  if (tabName === 'e4') return showModal('E4: Context-Sensitive Reasoning — Research Design', RD_CONTENT_E4)
+  if (tabName === 'e4-example') return showModal('E4: Context-Sensitive Reasoning — Practical Example', PE_CONTENT_E4)
+  if (tabName === 'e5') return showModal('E5: Ambiguity & Uncertainty Handling — Research Design', RD_CONTENT_E5)
+  if (tabName === 'e5-example') return showModal('E5: Ambiguity & Uncertainty Handling — Practical Example', PE_CONTENT_E5)
+  if (tabName === 'e6') return showModal('E6: Adversarial Policy Stress Test — Research Design', RD_CONTENT_E6)
+  if (tabName === 'e6-example') return showModal('E6: Adversarial Policy Stress Test — Practical Example', PE_CONTENT_E6)
   const meta = EXPERIMENT_META[tabName]
   if (!meta) return
   showModal(meta.title, renderMetaHTML(meta))
