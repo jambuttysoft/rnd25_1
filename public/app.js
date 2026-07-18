@@ -639,6 +639,10 @@ function renderExtractionResult(f) {
     { label: 'Subtotal', key: 'subtotal', section: 'amounts' },
     { label: 'Tax Amount', key: 'tax_amount', section: 'amounts' },
     { label: 'Tax Rate', key: 'tax_rate', section: 'amounts' },
+    { label: 'Points Payment', key: 'points_payment', section: 'amounts' },
+    { label: 'Points Earned', key: 'points_earned', section: 'amounts' },
+    { label: 'Gift Card Payment', key: 'gift_card_payment', section: 'amounts' },
+    { label: 'Other Virtual Payment', key: 'other_virtual_payment', section: 'amounts' },
     { label: 'Total Amount', key: 'amount', section: 'amounts' },
     { label: 'Currency', key: 'currency', section: 'amounts' },
     { label: 'Category', key: 'category', section: 'class' },
@@ -765,6 +769,10 @@ function renderE1Result(data) {
         ${data?.tax_amount != null ? `<span>TAX/VAT ${data.tax_rate ? `(${data.tax_rate}%)` : ''}:</span><span style="text-align: right;">${Number(data.tax_amount).toFixed(2)}</span>` : ''}
         ${data?.surcharge != null && Number(data.surcharge) !== 0 ? `<span>SURCHARGE:</span><span style="text-align: right;">${Number(data.surcharge).toFixed(2)}</span>` : ''}
         ${data?.cash_out != null && Number(data.cash_out) !== 0 ? `<span>CASH OUT:</span><span style="text-align: right;">${Number(data.cash_out).toFixed(2)}</span>` : ''}
+        ${data?.points_payment != null && Number(data.points_payment) !== 0 ? `<span style="color: var(--indigo); font-weight: 600;">POINTS PAYMENT:</span><span style="text-align: right; color: var(--indigo); font-weight: 600;">${Number(data.points_payment).toFixed(2)}</span>` : ''}
+        ${data?.points_earned != null && Number(data.points_earned) !== 0 ? `<span style="color: var(--green); font-weight: 600;">POINTS EARNED:</span><span style="text-align: right; color: var(--green); font-weight: 600;">+${Number(data.points_earned).toFixed(2)}</span>` : ''}
+        ${data?.gift_card_payment != null && Number(data.gift_card_payment) !== 0 ? `<span style="color: var(--indigo); font-weight: 600;">GIFT CARD PAYMENT:</span><span style="text-align: right; color: var(--indigo); font-weight: 600;">${Number(data.gift_card_payment).toFixed(2)}</span>` : ''}
+        ${data?.other_virtual_payment != null && Number(data.other_virtual_payment) !== 0 ? `<span style="color: var(--indigo); font-weight: 600;">OTHER VIRTUAL PAYMENT:</span><span style="text-align: right; color: var(--indigo); font-weight: 600;">${Number(data.other_virtual_payment).toFixed(2)}</span>` : ''}
         ${discountTotal !== 0 ? `<span style="color: var(--indigo); font-weight: 600;">POINTS / DISCOUNT:</span><span style="text-align: right; color: var(--indigo); font-weight: 600;">${Number(discountTotal).toFixed(2)}</span>` : ''}
         <span style="font-size: 14px; font-weight: 700; color: var(--ink);">TOTAL:</span>
         <span style="font-size: 14px; font-weight: 700; color: var(--ink); text-align: right;">${data?.currency || ''} ${Number(data?.amount || 0).toFixed(2)}</span>
@@ -1372,7 +1380,8 @@ function loadAnnotation() {
   if (!filename) {
     showAnnPreview(null);
     showAnnStatus(null);
-    ['ann-vendor', 'ann-date', 'ann-amount', 'ann-currency', 'ann-reason', 'ann-notes']
+    ['ann-vendor', 'ann-date', 'ann-amount', 'ann-currency', 'ann-reason', 'ann-notes',
+     'ann-points-payment', 'ann-points-earned', 'ann-gift-card-payment', 'ann-other-virtual-payment']
       .forEach(id => { document.getElementById(id).value = ''; });
     document.getElementById('ann-category').value = 'other';
     document.getElementById('ann-verdict').value = 'justified';
@@ -1389,6 +1398,10 @@ function loadAnnotation() {
     document.getElementById('ann-date').value = ann.date || '';
     document.getElementById('ann-amount').value = ann.amount || '';
     document.getElementById('ann-currency').value = ann.currency || '';
+    document.getElementById('ann-points-payment').value = ann.points_payment || '';
+    document.getElementById('ann-points-earned').value = ann.points_earned || '';
+    document.getElementById('ann-gift-card-payment').value = ann.gift_card_payment || '';
+    document.getElementById('ann-other-virtual-payment').value = ann.other_virtual_payment || '';
     document.getElementById('ann-category').value = ann.category || 'other';
     document.getElementById('ann-verdict').value = ann.human_verdict || 'justified';
     document.getElementById('ann-reason').value = ann.human_verdict_reason || '';
@@ -1412,12 +1425,20 @@ function loadAnnotation() {
     document.getElementById('ann-date').value = e1.date || '';
     document.getElementById('ann-amount').value = (e1.amount != null && e1.amount !== '') ? e1.amount : '';
     document.getElementById('ann-currency').value = e1.currency || '';
+    document.getElementById('ann-points-payment').value = (e1.points_payment != null && e1.points_payment !== '') ? e1.points_payment : '';
+    document.getElementById('ann-points-earned').value = (e1.points_earned != null && e1.points_earned !== '') ? e1.points_earned : '';
+    document.getElementById('ann-gift-card-payment').value = (e1.gift_card_payment != null && e1.gift_card_payment !== '') ? e1.gift_card_payment : '';
+    document.getElementById('ann-other-virtual-payment').value = (e1.other_virtual_payment != null && e1.other_virtual_payment !== '') ? e1.other_virtual_payment : '';
     document.getElementById('ann-category').value = e1.category || 'other';
   } else {
     document.getElementById('ann-vendor').value = '';
     document.getElementById('ann-date').value = '';
     document.getElementById('ann-amount').value = '';
     document.getElementById('ann-currency').value = '';
+    document.getElementById('ann-points-payment').value = '';
+    document.getElementById('ann-points-earned').value = '';
+    document.getElementById('ann-gift-card-payment').value = '';
+    document.getElementById('ann-other-virtual-payment').value = '';
     document.getElementById('ann-category').value = 'other';
   }
   document.getElementById('ann-verdict').value = 'justified';
@@ -1435,13 +1456,23 @@ async function saveAnnotation() {
   if (!reason) {
     return showError('ann-result', 'Verdict Reason is required. State the primary reason in one sentence.');
   }
+  const parseAnnFloat = (id) => {
+    const val = document.getElementById(id).value;
+    if (val === null || val === undefined || val.trim() === '') return null;
+    const parsed = parseFloat(val);
+    return isNaN(parsed) ? null : parsed;
+  };
   const e1 = getE1CachedExtraction(filename);
   const entry = {
     filename,
     vendor: document.getElementById('ann-vendor').value || null,
     date: document.getElementById('ann-date').value || null,
-    amount: parseFloat(document.getElementById('ann-amount').value) || null,
+    amount: parseAnnFloat('ann-amount'),
     currency: document.getElementById('ann-currency').value || null,
+    points_payment: parseAnnFloat('ann-points-payment'),
+    points_earned: parseAnnFloat('ann-points-earned'),
+    gift_card_payment: parseAnnFloat('ann-gift-card-payment'),
+    other_virtual_payment: parseAnnFloat('ann-other-virtual-payment'),
     category: document.getElementById('ann-category').value,
     human_verdict: document.getElementById('ann-verdict').value,
     human_verdict_reason: reason,
@@ -1452,6 +1483,10 @@ async function saveAnnotation() {
       date: e1.date || null,
       amount: e1.amount || null,
       currency: e1.currency || null,
+      points_payment: e1.points_payment || null,
+      points_earned: e1.points_earned || null,
+      gift_card_payment: e1.gift_card_payment || null,
+      other_virtual_payment: e1.other_virtual_payment || null,
       category: e1.category || null
     } : null
   };

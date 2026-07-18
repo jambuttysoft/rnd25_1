@@ -122,6 +122,10 @@ app.post('/api/extract', async (req, res) => {
     const extraction = extractJson(raw);
     // Normalize amount to float (handles European format "1.249,00")
     extraction.amount = normalizeAmount(extraction.amount);
+    extraction.points_payment = normalizeAmount(extraction.points_payment);
+    extraction.points_earned = normalizeAmount(extraction.points_earned);
+    extraction.gift_card_payment = normalizeAmount(extraction.gift_card_payment);
+    extraction.other_virtual_payment = normalizeAmount(extraction.other_virtual_payment);
     
     // Normalize currency value
     if (extraction.currency) {
@@ -165,6 +169,10 @@ app.post('/api/verdict', async (req, res) => {
     );
     const extraction = extractJson(rawExtract);
     extraction.amount = normalizeAmount(extraction.amount);
+    extraction.points_payment = normalizeAmount(extraction.points_payment);
+    extraction.points_earned = normalizeAmount(extraction.points_earned);
+    extraction.gift_card_payment = normalizeAmount(extraction.gift_card_payment);
+    extraction.other_virtual_payment = normalizeAmount(extraction.other_virtual_payment);
     if (currency && currency !== 'Any') extraction.currency = currency;
 
     // Step 2: Build policy text for the selected variant and phase
@@ -191,6 +199,10 @@ app.post('/api/verdict', async (req, res) => {
       currency: extraction.currency,
       category: extraction.category,
       line_items: (extraction.line_items || []).join(', ') || 'unknown',
+      points_payment: extraction.points_payment ?? 'null',
+      points_earned: extraction.points_earned ?? 'null',
+      gift_card_payment: extraction.gift_card_payment ?? 'null',
+      other_virtual_payment: extraction.other_virtual_payment ?? 'null',
     });
 
     const rawVerdict = await callText([{ role: 'user', content: prompt }], model, apiKey);
@@ -222,6 +234,10 @@ app.post('/api/phase-sensitivity', async (req, res) => {
     );
     const extraction = extractJson(rawExtract);
     extraction.amount = normalizeAmount(extraction.amount);
+    extraction.points_payment = normalizeAmount(extraction.points_payment);
+    extraction.points_earned = normalizeAmount(extraction.points_earned);
+    extraction.gift_card_payment = normalizeAmount(extraction.gift_card_payment);
+    extraction.other_virtual_payment = normalizeAmount(extraction.other_virtual_payment);
     if (currency && currency !== 'Any') extraction.currency = currency;
 
     // Step 2: Load policy
@@ -239,6 +255,10 @@ app.post('/api/phase-sensitivity', async (req, res) => {
           currency: extraction.currency,
           category: extraction.category,
           line_items: (extraction.line_items || []).join(', ') || 'unknown',
+          points_payment: extraction.points_payment ?? 'null',
+          points_earned: extraction.points_earned ?? 'null',
+          gift_card_payment: extraction.gift_card_payment ?? 'null',
+          other_virtual_payment: extraction.other_virtual_payment ?? 'null',
         });
         const raw = await callText([{ role: 'user', content: prompt }], model, apiKey);
         const result = extractJson(raw);
@@ -272,6 +292,10 @@ app.post('/api/adversarial', async (req, res) => {
     );
     const extraction = extractJson(rawExtract);
     extraction.amount = normalizeAmount(extraction.amount);
+    extraction.points_payment = normalizeAmount(extraction.points_payment);
+    extraction.points_earned = normalizeAmount(extraction.points_earned);
+    extraction.gift_card_payment = normalizeAmount(extraction.gift_card_payment);
+    extraction.other_virtual_payment = normalizeAmount(extraction.other_virtual_payment);
     if (currency && currency !== 'Any') extraction.currency = currency;
 
     const phaseIndex = Number.isInteger(phase) ? phase : parseInt(phase ?? 1);
@@ -290,6 +314,10 @@ app.post('/api/adversarial', async (req, res) => {
           currency: extraction.currency,
           category: extraction.category,
           line_items: (extraction.line_items || []).join(', ') || 'unknown',
+          points_payment: extraction.points_payment ?? 'null',
+          points_earned: extraction.points_earned ?? 'null',
+          gift_card_payment: extraction.gift_card_payment ?? 'null',
+          other_virtual_payment: extraction.other_virtual_payment ?? 'null',
         });
         const raw = await callText([{ role: 'user', content: prompt }], model, apiKey);
         const result = extractJson(raw);

@@ -275,6 +275,28 @@
               </div>
             </div>
 
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <div>
+                <label class="field-label" for="ann-points-payment">Points Payment</label>
+                <input id="ann-points-payment" class="field-input-text" type="number" step="0.01" placeholder="0.00">
+              </div>
+              <div>
+                <label class="field-label" for="ann-points-earned">Points Earned</label>
+                <input id="ann-points-earned" class="field-input-text" type="number" step="0.01" placeholder="0.00">
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <div>
+                <label class="field-label" for="ann-gift-card-payment">Gift Card Payment</label>
+                <input id="ann-gift-card-payment" class="field-input-text" type="number" step="0.01" placeholder="0.00">
+              </div>
+              <div>
+                <label class="field-label" for="ann-other-virtual-payment">Other Virtual Payment</label>
+                <input id="ann-other-virtual-payment" class="field-input-text" type="number" step="0.01" placeholder="0.00">
+              </div>
+            </div>
+
             <div>
               <label class="field-label" for="ann-category">Category</label>
               <select id="ann-category" class="field-select">
@@ -348,6 +370,10 @@
               <div class="meta-list__row"><span class="meta-list__label">Amount</span><span class="meta-list__value" id="ai-amount">—</span></div>
               <div class="meta-list__row"><span class="meta-list__label">Currency</span><span class="meta-list__value meta-list__value--plain" id="ai-currency">—</span></div>
               <div class="meta-list__row"><span class="meta-list__label">Category</span><span class="meta-list__value meta-list__value--plain" id="ai-category">—</span></div>
+              <div class="meta-list__row"><span class="meta-list__label">Points Pay</span><span class="meta-list__value" id="ai-points-payment">—</span></div>
+              <div class="meta-list__row"><span class="meta-list__label">Points Earned</span><span class="meta-list__value" id="ai-points-earned">—</span></div>
+              <div class="meta-list__row"><span class="meta-list__label">Gift Card Pay</span><span class="meta-list__value" id="ai-gift-card-payment">—</span></div>
+              <div class="meta-list__row"><span class="meta-list__label">Other Virtual Pay</span><span class="meta-list__value" id="ai-other-virtual-payment">—</span></div>
             </div>
           </div>
 
@@ -665,7 +691,7 @@
       }
 
       async function loadAiExtraction(filename) {
-        const ids = ['ai-vendor','ai-date','ai-amount','ai-currency','ai-category'];
+        const ids = ['ai-vendor','ai-date','ai-amount','ai-currency','ai-category','ai-points-payment','ai-points-earned','ai-gift-card-payment','ai-other-virtual-payment'];
         if (!filename) {
           ids.forEach(id => $(id).textContent = '—');
           return;
@@ -692,6 +718,10 @@
         $('ai-amount').textContent = (e1.amount != null && e1.amount !== '') ? e1.amount : '—';
         $('ai-currency').textContent = e1.currency || '—';
         $('ai-category').textContent = e1.category || '—';
+        $('ai-points-payment').textContent = (e1.points_payment != null && e1.points_payment !== '') ? e1.points_payment : '—';
+        $('ai-points-earned').textContent = (e1.points_earned != null && e1.points_earned !== '') ? e1.points_earned : '—';
+        $('ai-gift-card-payment').textContent = (e1.gift_card_payment != null && e1.gift_card_payment !== '') ? e1.gift_card_payment : '—';
+        $('ai-other-virtual-payment').textContent = (e1.other_virtual_payment != null && e1.other_virtual_payment !== '') ? e1.other_virtual_payment : '—';
         $('ai-status-pill').textContent = 'Populated';
         $('ai-status-pill').className = 'pill pill--green';
         $('summary-e1').innerHTML = '<span class="pill pill--green">Populated</span>';
@@ -720,10 +750,15 @@
         $('ann-amount').value = (e1.amount != null && e1.amount !== '') ? e1.amount : '';
         $('ann-currency').value = e1.currency || '';
         $('ann-category').value = e1.category || 'other';
+        $('ann-points-payment').value = (e1.points_payment != null && e1.points_payment !== '') ? e1.points_payment : '';
+        $('ann-points-earned').value = (e1.points_earned != null && e1.points_earned !== '') ? e1.points_earned : '';
+        $('ann-gift-card-payment').value = (e1.gift_card_payment != null && e1.gift_card_payment !== '') ? e1.gift_card_payment : '';
+        $('ann-other-virtual-payment').value = (e1.other_virtual_payment != null && e1.other_virtual_payment !== '') ? e1.other_virtual_payment : '';
       }
 
       function clearForm() {
-        ['ann-vendor','ann-date','ann-amount','ann-currency','ann-reason','ann-notes']
+        ['ann-vendor','ann-date','ann-amount','ann-currency','ann-reason','ann-notes',
+         'ann-points-payment','ann-points-earned','ann-gift-card-payment','ann-other-virtual-payment']
           .forEach(id => { const el = $(id); if (el) el.value = ''; });
         const cat = $('ann-category'); if (cat) cat.value = 'other';
         const ver = $('ann-verdict'); if (ver) ver.value = 'justified';

@@ -1,1 +1,30 @@
-[]
+[
+  {
+    "filename": "2025-10-07 14.53.02.jpg",
+    "vendor": "Coles Supermarkets Australia Pty Ltd",
+    "date": "2025-10-02",
+    "amount": 155.87,
+    "currency": "AUD",
+    "points_payment": 10.5,
+    "points_earned": 5,
+    "gift_card_payment": 15,
+    "other_virtual_payment": 2.5,
+    "category": "other",
+    "human_verdict": "justified",
+    "human_verdict_reason": "Verified receipt details including points and gift card payments.",
+    "is_ambiguous": false,
+    "notes": "",
+    "original_e1_values": {
+      "vendor": "Coles Supermarkets Australia Pty Ltd",
+      "date": "2025-10-02",
+      "amount": 155.87,
+      "currency": "AUD",
+      "points_payment": null,
+      "points_earned": null,
+      "gift_card_payment": null,
+      "other_virtual_payment": null,
+      "category": "other"
+    },
+    "updated_at": "2026-07-18T13:37:09.159Z"
+  }
+]
