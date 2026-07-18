@@ -688,7 +688,25 @@ async function runE1() {
 
 function renderE1Result(data) {
   const isImage = data?.mimeType && data.mimeType.startsWith('image/')
-  
+
+  // Detect discount/points items in line items
+  const discountItems = Array.isArray(data?.line_items)
+    ? data.line_items.filter(item => {
+        const desc = (typeof item === 'string' ? item : (item.description || '')).toLowerCase()
+        const total = typeof item === 'object' ? Number(item.total_price || 0) : 0
+        return total < 0
+          || desc.includes('point')
+          || desc.includes('redeem')
+          || desc.includes('discount')
+          || desc.includes('credit')
+          || desc.includes('coupon')
+          || desc.includes('voucher')
+      })
+    : []
+  const discountTotal = discountItems.reduce((sum, item) => {
+    return sum + (typeof item === 'object' ? Number(item.total_price || 0) : 0)
+  }, 0)
+
   const html = `
     <div style="max-width: 400px; margin: 0 auto; background: #ffffff; border: 1px dashed var(--ink-faint); border-radius: var(--r-md); box-shadow: 0 4px 20px rgba(0,0,0,0.04); padding: 24px; font-family: 'Courier New', Courier, monospace; color: var(--ink);">
       
@@ -747,6 +765,7 @@ function renderE1Result(data) {
         ${data?.tax_amount != null ? `<span>TAX/VAT ${data.tax_rate ? `(${data.tax_rate}%)` : ''}:</span><span style="text-align: right;">${Number(data.tax_amount).toFixed(2)}</span>` : ''}
         ${data?.surcharge != null && Number(data.surcharge) !== 0 ? `<span>SURCHARGE:</span><span style="text-align: right;">${Number(data.surcharge).toFixed(2)}</span>` : ''}
         ${data?.cash_out != null && Number(data.cash_out) !== 0 ? `<span>CASH OUT:</span><span style="text-align: right;">${Number(data.cash_out).toFixed(2)}</span>` : ''}
+        ${discountTotal !== 0 ? `<span style="color: var(--indigo); font-weight: 600;">POINTS / DISCOUNT:</span><span style="text-align: right; color: var(--indigo); font-weight: 600;">${Number(discountTotal).toFixed(2)}</span>` : ''}
         <span style="font-size: 14px; font-weight: 700; color: var(--ink);">TOTAL:</span>
         <span style="font-size: 14px; font-weight: 700; color: var(--ink); text-align: right;">${data?.currency || ''} ${Number(data?.amount || 0).toFixed(2)}</span>
       </div>
