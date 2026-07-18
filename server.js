@@ -538,6 +538,28 @@ app.post('/api/receipts/restore', (req, res) => {
   }
 });
 
+const clientDistPath = join(__dirname, 'client', 'dist')
+if (existsSync(join(clientDistPath, 'index.html'))) {
+  app.use(express.static(clientDistPath, {
+    maxAge: '1y',
+    immutable: true,
+    index: false,
+    setHeaders(res, filePath) {
+      if (filePath.endsWith('index.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+      }
+    }
+  }))
+  // Catch-all for SPA client-side routing (must be AFTER API routes)
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api/')) {
+      res.sendFile(join(clientDistPath, 'index.html'))
+    } else {
+      res.status(404).json({ error: 'API route not found' })
+    }
+  })
+}
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => console.log(`Server running at http://0.0.0.0:${PORT}`));
 
