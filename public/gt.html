@@ -162,6 +162,9 @@
                 <button class="btn-icon" id="btn-rotate" type="button" title="Rotate" aria-label="Rotate">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
                 </button>
+                <button class="btn-icon" id="btn-reset" type="button" title="Reset image" aria-label="Reset image">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                </button>
                 <button class="btn-icon" id="btn-download" type="button" title="Download" aria-label="Download">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 </button>
@@ -418,19 +421,27 @@
 
       let currentScale = 1.0;
       let currentRotation = 0;
+      let panX = 0;
+      let panY = 0;
+      let isDragging = false;
+      let startX = 0;
+      let startY = 0;
 
       function resetImageTransform() {
         currentScale = 1.0;
         currentRotation = 0;
-        applyImageTransform();
+        panX = 0;
+        panY = 0;
+        applyImageTransform(true);
       }
 
-      function applyImageTransform() {
+      function applyImageTransform(animate = false) {
         const img = $('ann-preview');
         if (img) {
-          img.style.transform = `scale(${currentScale}) rotate(${currentRotation}deg)`;
-          img.style.transition = 'transform 0.2s ease';
+          img.style.transition = animate ? 'transform 0.2s ease' : 'none';
+          img.style.transform = `translate(${panX}px, ${panY}px) scale(${currentScale}) rotate(${currentRotation}deg)`;
           img.style.transformOrigin = 'center center';
+          img.style.cursor = isDragging ? 'grabbing' : (currentScale > 1.0 ? 'grab' : 'default');
         }
       }
 
@@ -950,12 +961,52 @@
         }
       });
 
+      function wireImageDragging() {
+        const img = $('ann-preview');
+        if (!img) return;
+
+        img.addEventListener('dragstart', (e) => e.preventDefault());
+
+        const startDrag = (e) => {
+          if (img.style.display === 'none') return;
+          isDragging = true;
+          const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+          const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+          startX = clientX - panX;
+          startY = clientY - panY;
+          applyImageTransform(false);
+        };
+
+        const doDrag = (e) => {
+          if (!isDragging) return;
+          const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+          const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+          panX = clientX - startX;
+          panY = clientY - startY;
+          applyImageTransform(false);
+        };
+
+        const stopDrag = () => {
+          if (!isDragging) return;
+          isDragging = false;
+          applyImageTransform(false);
+        };
+
+        img.addEventListener('mousedown', startDrag);
+        window.addEventListener('mousemove', doDrag);
+        window.addEventListener('mouseup', stopDrag);
+
+        img.addEventListener('touchstart', startDrag, { passive: true });
+        window.addEventListener('touchmove', doDrag, { passive: false });
+        window.addEventListener('touchend', stopDrag);
+      }
+
       function wireImageControls() {
         $('btn-zoom-in')?.addEventListener('click', () => {
           const img = $('ann-preview');
           if (img && img.style.display !== 'none') {
             currentScale = Math.min(5.0, currentScale + 0.2);
-            applyImageTransform();
+            applyImageTransform(true);
           }
         });
 
@@ -963,7 +1014,7 @@
           const img = $('ann-preview');
           if (img && img.style.display !== 'none') {
             currentScale = Math.max(0.2, currentScale - 0.2);
-            applyImageTransform();
+            applyImageTransform(true);
           }
         });
 
@@ -971,8 +1022,12 @@
           const img = $('ann-preview');
           if (img && img.style.display !== 'none') {
             currentRotation = (currentRotation + 90) % 360;
-            applyImageTransform();
+            applyImageTransform(true);
           }
+        });
+
+        $('btn-reset')?.addEventListener('click', () => {
+          resetImageTransform();
         });
 
         $('btn-fullscreen')?.addEventListener('click', () => {
@@ -1000,6 +1055,8 @@
             document.body.removeChild(a);
           }
         });
+
+        wireImageDragging();
       }
 
       // Refresh KPIs every 30s so changes from other tabs are picked up
