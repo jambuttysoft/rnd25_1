@@ -1,9 +1,10 @@
 import 'dotenv/config';
 import express from 'express';
 import multer from 'multer';
-import { readFileSync, writeFileSync, readdirSync } from 'fs';
+import { readFileSync, writeFileSync, readdirSync, unlinkSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { dirname, join, basename } from 'path';
+import { execSync } from 'child_process';
 
 import { callText, callVision, extractJson, normalizeAmount } from "./lib/mock-openrouter.js";
 import { loadPolicy, policyAsText, listPolicies, validatePolicy, writePolicy } from './lib/policy.js';
@@ -29,7 +30,29 @@ function saveAnnotations(data) {
   writeFileSync(GT_PATH, JSON.stringify(data, null, 2));
 }
 
+function saveUploadedReceipt(filename, base64) {
+  if (!filename || !base64) return;
+  const safeFilename = basename(filename);
+  if (safeFilename !== filename) return;
+  const filePath = join(RECEIPTS_DIR, safeFilename);
+  if (!existsSync(filePath)) {
+    try {
+      writeFileSync(filePath, Buffer.from(base64, 'base64'));
+    } catch (err) {
+      console.warn(`Failed to write uploaded receipt ${safeFilename}: ${err.message}`);
+    }
+  }
+}
+
 app.use(express.json({ limit: '50mb' }));
+
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
 app.use(express.static(join(__dirname, 'public'), {
   etag: false,
   setHeaders: (res) => {
@@ -48,13 +71,20 @@ function saveConfig(cfg) {
 // Settings routes
 app.get('/api/settings', (req, res) => {
   const cfg = loadConfig();
-  cfg.apiKey = process.env.OPENROUTER_API_KEY || '';
-  res.json(cfg);
+  res.json({
+    model: cfg.model,
+    visionModel: cfg.visionModel,
+    currency: cfg.currency,
+    hasApiKey: !!process.env.OPENROUTER_API_KEY
+  });
 });
 
 app.post('/api/settings', (req, res) => {
+  const { model, visionModel, currency } = req.body;
   const cfg = loadConfig();
-  Object.assign(cfg, req.body);
+  if (model) cfg.model = model;
+  if (visionModel) cfg.visionModel = visionModel;
+  if (currency) cfg.currency = currency;
   saveConfig(cfg);
   res.json({ ok: true });
 });
@@ -65,9 +95,9 @@ app.get('/api/health', (req, res) => res.json({ ok: true }));
 // ─── POST /api/test-connection ────────────────────────────────────────────────
 // Verify that the API key works by sending a trivial request.
 app.post('/api/test-connection', async (req, res) => {
-  const { apiKey: frontKey, model } = req.body;
-  const apiKey = frontKey || process.env.OPENROUTER_API_KEY;
-  if (!apiKey) return res.json({ ok: false, error: 'apiKey is required' });
+  const { model } = req.body;
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) return res.json({ ok: false, error: 'OPENROUTER_API_KEY is not set in the server environment (.env file)' });
   try {
     const result = await callText(
       [{ role: 'user', content: 'Reply with the single word: OK' }],
@@ -82,11 +112,12 @@ app.post('/api/test-connection', async (req, res) => {
 
 
 app.post('/api/extract', async (req, res) => {
-  const { base64, mimeType, apiKey: frontKey, model, currency } = req.body;
-  const apiKey = frontKey || process.env.OPENROUTER_API_KEY;
-  if (!apiKey) return res.json({ error: 'apiKey is required' });
+  const { base64, mimeType, filename, model, currency } = req.body;
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) return res.json({ error: 'OPENROUTER_API_KEY is not set in the server environment (.env file)' });
   if (!base64) return res.json({ error: 'base64 image data is required' });
   try {
+    saveUploadedReceipt(filename, base64);
     const raw = await callVision(base64, mimeType || 'image/jpeg', PROMPTS.extraction, model, apiKey);
     const extraction = extractJson(raw);
     // Normalize amount to float (handles European format "1.249,00")
@@ -118,11 +149,12 @@ app.post('/api/extract', async (req, res) => {
 // E2, E3, E5: Two-step pipeline — OCR extraction then reasoning verdict.
 // useCot: false → E2, useCot: true → E3 (4-step), useCot: true + useE5Prompt: true → E5 (5-step)
 app.post('/api/verdict', async (req, res) => {
-  const { base64, mimeType, apiKey: frontKey, model, visionModel, policy: policyName, phase, useCot, useE5Prompt, currency } = req.body;
-  const apiKey = frontKey || process.env.OPENROUTER_API_KEY;
-  if (!apiKey) return res.json({ error: 'apiKey is required' });
+  const { base64, mimeType, filename, model, visionModel, policy: policyName, phase, useCot, useE5Prompt, currency } = req.body;
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) return res.json({ error: 'OPENROUTER_API_KEY is not set in the server environment (.env file)' });
   if (!base64) return res.json({ error: 'base64 image data is required' });
   try {
+    saveUploadedReceipt(filename, base64);
     // Step 1: Extract receipt fields using vision model
     const rawExtract = await callVision(
       base64,
@@ -174,11 +206,12 @@ app.post('/api/verdict', async (req, res) => {
 // ─── POST /api/phase-sensitivity ─────────────────────────────────────────────
 // E4: Evaluate the same expense across all 3 project phases in parallel.
 app.post('/api/phase-sensitivity', async (req, res) => {
-  const { base64, mimeType, apiKey: frontKey, model, visionModel, policy: policyName, currency } = req.body;
-  const apiKey = frontKey || process.env.OPENROUTER_API_KEY;
-  if (!apiKey) return res.json({ error: 'apiKey is required' });
+  const { base64, mimeType, filename, model, visionModel, policy: policyName, currency } = req.body;
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) return res.json({ error: 'OPENROUTER_API_KEY is not set in the server environment (.env file)' });
   if (!base64) return res.json({ error: 'base64 image data is required' });
   try {
+    saveUploadedReceipt(filename, base64);
     // Step 1: Extract receipt fields once
     const rawExtract = await callVision(
       base64,
@@ -223,11 +256,12 @@ app.post('/api/phase-sensitivity', async (req, res) => {
 // ─── POST /api/adversarial ────────────────────────────────────────────────────
 // E6: Evaluate the same expense under all 3 policy variants in parallel.
 app.post('/api/adversarial', async (req, res) => {
-  const { base64, mimeType, apiKey: frontKey, model, visionModel, phase, currency } = req.body;
-  const apiKey = frontKey || process.env.OPENROUTER_API_KEY;
-  if (!apiKey) return res.json({ error: 'apiKey is required' });
+  const { base64, mimeType, filename, model, visionModel, phase, currency } = req.body;
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) return res.json({ error: 'OPENROUTER_API_KEY is not set in the server environment (.env file)' });
   if (!base64) return res.json({ error: 'base64 image data is required' });
   try {
+    saveUploadedReceipt(filename, base64);
     // Step 1: Extract receipt fields once
     const rawExtract = await callVision(
       base64,
@@ -440,6 +474,41 @@ app.put('/api/policies/:name', (req, res) => {
     res.status(500).json({ error: `Failed to save policy: ${e.message}` })
   }
 })
+
+// ─── POST /api/annotations/clear ──────────────────────────────────────────────
+// Clear all ground-truth annotations and delete all receipts from the disk.
+app.post('/api/annotations/clear', (req, res) => {
+  try {
+    saveAnnotations([]);
+    
+    // Clear receipts from CASH_RECIEPTS directory
+    const files = readdirSync(RECEIPTS_DIR);
+    for (const file of files) {
+      if (file !== '.DS_Store') {
+        try {
+          unlinkSync(join(RECEIPTS_DIR, file));
+        } catch (err) {
+          console.warn(`Failed to delete ${file}: ${err.message}`);
+        }
+      }
+    }
+    
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: `Failed to clear annotations: ${e.message}` });
+  }
+});
+
+// ─── POST /api/receipts/restore ──────────────────────────────────────────────
+// Restore default receipts by running git restore CASH_RECIEPTS/.
+app.post('/api/receipts/restore', (req, res) => {
+  try {
+    execSync('git restore CASH_RECIEPTS/', { cwd: __dirname });
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: `Failed to restore receipts: ${e.message}` });
+  }
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => console.log(`Server running at http://0.0.0.0:${PORT}`));

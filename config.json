@@ -1,6 +1,5 @@
 {
   "model": "google/gemini-2.5-flash",
   "visionModel": "google/gemini-2.5-flash",
-  "currency": "Any",
-  "test": 1
+  "currency": "Any"
 }

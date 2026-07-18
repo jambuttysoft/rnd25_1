@@ -1,4 +1,11 @@
 node_modules/
 .env
 *.log
-.DS_Store
+.DS_Store/*
+.claude/*
+.playwright-mcp/*
+.agent/*
+.playwright-cli/*
+.sisyphus/*
+docs/*
+paper/*

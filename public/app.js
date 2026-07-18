@@ -97,15 +97,12 @@ function restoreTabState(tabName) {
 // ─── Settings ────────────────────────────────────────────────────────────────
 
 // API key persisted in localStorage for convenience (OpenRouter is a research API, not a production secret)
-// API key persisted in localStorage for convenience (OpenRouter is a research API, not a production secret)
-let _apiKey = '';
-
 let _settings = {
   model: 'google/gemini-2.5-flash',
   visionModel: 'google/gemini-2.5-flash',
-  apiKey: '',
   currency: 'Any'
 };
+let _hasApiKey = false;
 
 function initSettings() {
   const saved = localStorage.getItem('psa_settings');
@@ -114,7 +111,6 @@ function initSettings() {
       const s = JSON.parse(saved);
       if (s.model) _settings.model = s.model;
       if (s.visionModel) _settings.visionModel = s.visionModel;
-      if (s.apiKey) { _settings.apiKey = s.apiKey; _apiKey = s.apiKey; }
       if (s.currency) _settings.currency = s.currency;
     } catch (_) {}
   }
@@ -123,29 +119,27 @@ initSettings();
 
 async function fetchServerSettings() {
   try {
-    const res = await fetch('/api/settings');
+    const res = await fetch('/api/settings?_t=' + Date.now());
     const cfg = await res.json();
     const saved = localStorage.getItem('psa_settings');
     if (cfg.model && !saved) _settings.model = cfg.model;
     if (cfg.visionModel && !saved) _settings.visionModel = cfg.visionModel;
-    if (cfg.apiKey && !_settings.apiKey) { _settings.apiKey = cfg.apiKey; _apiKey = cfg.apiKey; }
     if (cfg.currency && !saved) _settings.currency = cfg.currency;
+    if (cfg.hasApiKey !== undefined) _hasApiKey = cfg.hasApiKey;
   } catch (_) {}
 }
 fetchServerSettings();
 
 async function loadSettings() {
-  const apikeyEl = document.getElementById('s-apikey');
   const modelEl = document.getElementById('s-model');
   const visionEl = document.getElementById('s-vision-model');
   const currencyEl = document.getElementById('s-currency');
 
-  if (apikeyEl && modelEl && visionEl) {
+  if (modelEl && visionEl) {
     const saved = localStorage.getItem('psa_settings');
     if (saved) {
       try {
         const s = JSON.parse(saved);
-        if (s.apiKey && s.apiKey.startsWith('sk-')) { _apiKey = s.apiKey; apikeyEl.value = s.apiKey; _settings.apiKey = s.apiKey; }
         if (s.model) { modelEl.value = s.model; _settings.model = s.model; }
         if (s.visionModel) { visionEl.value = s.visionModel; _settings.visionModel = s.visionModel; }
         if (s.currency && currencyEl) { currencyEl.value = s.currency; _settings.currency = s.currency; }
@@ -153,12 +147,12 @@ async function loadSettings() {
     }
 
     try {
-      const res = await fetch('/api/settings');
+      const res = await fetch('/api/settings?_t=' + Date.now());
       const cfg = await res.json();
       if (cfg.model && !saved) { modelEl.value = cfg.model; _settings.model = cfg.model; }
       if (cfg.visionModel && !saved) { visionEl.value = cfg.visionModel; _settings.visionModel = cfg.visionModel; }
-      if (cfg.apiKey && !_apiKey) { _apiKey = cfg.apiKey; apikeyEl.value = cfg.apiKey; _settings.apiKey = cfg.apiKey; }
       if (cfg.currency && currencyEl && !currencyEl.value) { currencyEl.value = cfg.currency; _settings.currency = cfg.currency; }
+      if (cfg.hasApiKey !== undefined) _hasApiKey = cfg.hasApiKey;
     } catch (_) {}
 
     populateStStatusSummary();
@@ -168,7 +162,7 @@ async function loadSettings() {
 function populateStStatusSummary() {
   const summaryEl = document.getElementById('st-status-summary');
   if (!summaryEl) return;
-  const { model, visionModel, apiKey } = getSettings();
+  const { model, visionModel } = getSettings();
   const hasSaved = !!localStorage.getItem('psa_settings');
   const statusLabel = document.getElementById('st-status-label');
   const visionLabel = document.getElementById('st-vision-label');
@@ -183,8 +177,8 @@ function populateStStatusSummary() {
   if (visionLabel) visionLabel.textContent = visionModel || '—';
   if (modelLabel) modelLabel.textContent = model || '—';
   if (connLabel) {
-    connLabel.textContent = apiKey ? 'Key present' : 'No key';
-    connLabel.className = apiKey ? 'text-gray-700' : 'text-gray-500';
+    connLabel.textContent = _hasApiKey ? 'Active (server key)' : 'No key on server';
+    connLabel.className = _hasApiKey ? 'text-green-700 font-medium' : 'text-red-600 font-medium';
   }
   summaryEl.classList.remove('hidden');
 }
@@ -210,17 +204,14 @@ function isValidApiKey(k) {
 }
 
 function getSettings() {
-  const apikeyEl = document.getElementById('s-apikey');
   const modelEl = document.getElementById('s-model');
   const visionEl = document.getElementById('s-vision-model');
   const currencyEl = document.getElementById('s-currency');
 
-  if (apikeyEl && modelEl && visionEl) {
-    const inputKey = apikeyEl.value;
+  if (modelEl && visionEl) {
     return {
       model: modelEl.value,
       visionModel: visionEl.value,
-      apiKey: isValidApiKey(inputKey) ? inputKey : (isValidApiKey(_apiKey) ? _apiKey : ''),
       currency: currencyEl?.value || 'Any',
     };
   }
@@ -228,22 +219,17 @@ function getSettings() {
   return {
     model: _settings.model,
     visionModel: _settings.visionModel,
-    apiKey: isValidApiKey(_settings.apiKey) ? _settings.apiKey : (isValidApiKey(_apiKey) ? _apiKey : ''),
     currency: _settings.currency,
   };
 }
 
 async function saveSettings() {
-  const { model, visionModel, apiKey, currency } = getSettings();
-  if (apiKey) {
-    _apiKey = apiKey;
-    _settings.apiKey = apiKey;
-  }
+  const { model, visionModel, currency } = getSettings();
   _settings.model = model;
   _settings.visionModel = visionModel;
   _settings.currency = currency;
 
-  localStorage.setItem('psa_settings', JSON.stringify({ apiKey, model, visionModel, currency }));
+  localStorage.setItem('psa_settings', JSON.stringify({ model, visionModel, currency }));
 
   await fetch('/api/settings', {
     method: 'POST',
@@ -255,7 +241,7 @@ async function saveSettings() {
 }
 
 async function testConnection() {
-  const { apiKey, model } = getSettings();
+  const { model } = getSettings();
   showResult('settings-result', '<span class="text-gray-500">Testing…</span>');
   const connLabel = document.getElementById('st-connection-label');
   if (connLabel) {
@@ -266,28 +252,33 @@ async function testConnection() {
     const res = await fetch('/api/test-connection', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ apiKey: apiKey || '', model }),
+      body: JSON.stringify({ model }),
     });
     const data = await res.json();
     if (data.ok) {
       showResult('settings-result', `<span class="text-green-600">✓ Connected — model replied: "${data.response}"</span>`);
+      _hasApiKey = true;
       if (connLabel) {
         connLabel.textContent = 'Verified';
         connLabel.className = 'text-green-700 font-medium';
       }
     } else {
       showError('settings-result', data.error || 'Connection failed');
+      _hasApiKey = false;
       if (connLabel) {
         connLabel.textContent = 'Failed';
         connLabel.className = 'text-red-600 font-medium';
       }
     }
+    populateStStatusSummary();
   } catch (e) {
     showError('settings-result', e.message);
+    _hasApiKey = false;
     if (connLabel) {
       connLabel.textContent = 'Failed';
       connLabel.className = 'text-red-600 font-medium';
     }
+    populateStStatusSummary();
   }
 }
 
@@ -680,9 +671,9 @@ async function runE1() {
   try {
     const { base64, mimeType, filename } = await getFileData('e1-file')
     const { apiKey, visionModel, currency } = getSettings()
-    const result = await apiPost('/api/extract', { base64, mimeType, apiKey, model: visionModel, currency })
-
     const filenameVal = filename || fileInput.files[0]?.name || shared?.filename
+    const result = await apiPost('/api/extract', { base64, mimeType, filename: filenameVal, apiKey, model: visionModel, currency })
+
     ResultsStore.addResult('e1', {
       config: { visionModel, filename: filenameVal },
       result: result.extraction,
@@ -783,15 +774,14 @@ async function runE2() {
   setExperimentState('e2', 'running');
   const startTime = performance.now();
   try {
-    const { base64, mimeType } = await getFileData('e2-file');
-const { apiKey, visionModel, model, currency } = getSettings();
-
+    const { base64, mimeType, filename } = await getFileData('e2-file');
+    const { apiKey, visionModel, model, currency } = getSettings();
 
     const res = await fetch('/api/verdict', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        base64, mimeType, apiKey, model, visionModel, currency,
+        base64, mimeType, filename, apiKey, model, visionModel, currency,
         policy: document.getElementById('e2-policy').value,
         phase: parseInt(document.getElementById('e2-phase').value),
         useCot: false,
@@ -859,15 +849,14 @@ async function runE3() {
   showResult('e3-result', '<p class="text-sm text-gray-500">Reasoning through policy...</p>')
   const startTime = performance.now();
   try {
-    const { base64, mimeType } = await getFileData('e3-file');
-const { apiKey, visionModel, model, currency } = getSettings();
-
+    const { base64, mimeType, filename } = await getFileData('e3-file');
+    const { apiKey, visionModel, model, currency } = getSettings();
 
     const res = await fetch('/api/verdict', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        base64, mimeType, apiKey, model, visionModel, currency,
+        base64, mimeType, filename, apiKey, model, visionModel, currency,
         policy: document.getElementById('e3-policy').value,
         phase: parseInt(document.getElementById('e3-phase').value),
         useCot: true,
@@ -938,15 +927,14 @@ async function runE4() {
   showResult('e4-result', '');
   const startTime = performance.now();
   try {
-    const { base64, mimeType } = await getFileData('e4-file');
+    const { base64, mimeType, filename } = await getFileData('e4-file');
     const { apiKey, visionModel, model, currency } = getSettings();
-
 
     const res = await fetch('/api/phase-sensitivity', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        base64, mimeType, apiKey, model, visionModel, currency,
+        base64, mimeType, filename, apiKey, model, visionModel, currency,
         policy: document.getElementById('e4-policy').value,
       }),
     });
@@ -1009,15 +997,14 @@ async function runE5() {
   setExperimentState('e5', 'running');
   const startTime = performance.now();
   try {
-    const { base64, mimeType } = await getFileData('e5-file');
+    const { base64, mimeType, filename } = await getFileData('e5-file');
     const { apiKey, visionModel, model, currency } = getSettings();
-
 
     const res = await fetch('/api/verdict', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        base64, mimeType, apiKey, model, visionModel, currency,
+        base64, mimeType, filename, apiKey, model, visionModel, currency,
         policy: document.getElementById('e5-policy').value,
         phase: parseInt(document.getElementById('e5-phase').value),
         useCot: true,
@@ -1097,15 +1084,14 @@ async function runE6() {
 
   const startTime = performance.now();
   try {
-    const { base64, mimeType } = await getFileData('e6-file');
+    const { base64, mimeType, filename } = await getFileData('e6-file');
     const { apiKey, visionModel, model, currency } = getSettings();
-
 
     const res = await fetch('/api/adversarial', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        base64, mimeType, apiKey, model, visionModel, currency,
+        base64, mimeType, filename, apiKey, model, visionModel, currency,
         phase: parseInt(document.getElementById('e6-phase').value),
       }),
     });
@@ -1180,8 +1166,8 @@ async function initAnnotate() {
   _annotateInitialized = true;
   try {
     [_receipts, _annotations] = await Promise.all([
-      fetch('/api/receipts').then(r => r.json()),
-      fetch('/api/annotations').then(r => r.json()),
+      fetch('/api/receipts?_t=' + Date.now()).then(r => r.json()),
+      fetch('/api/annotations?_t=' + Date.now()).then(r => r.json()),
     ]);
     const sel = document.getElementById('ann-file');
     sel.innerHTML = '<option value="">Select a receipt...</option>' +
@@ -1290,6 +1276,27 @@ function getE1CachedExtraction(filename) {
     if (single && (single.filename === fn || single.config?.filename === fn)) {
       return single.result || single.extraction;
     }
+
+    // Check in _annotations (ground truth loaded from server)
+    if (typeof _annotations !== 'undefined' && Array.isArray(_annotations)) {
+      const ann = _annotations.find(a => a.filename === fn);
+      if (ann) {
+        if (ann.original_e1_values) {
+          return ann.original_e1_values;
+        }
+        // Fallback: construct from annotation fields
+        if (ann.vendor || ann.date || ann.amount != null) {
+          return {
+            vendor: ann.vendor || null,
+            date: ann.date || null,
+            amount: ann.amount || null,
+            currency: ann.currency || null,
+            category: ann.category || null
+          };
+        }
+      }
+    }
+
     return null;
   } catch {
     return null;
@@ -1357,7 +1364,7 @@ function loadAnnotation() {
   showAnnPreview(filename);
 
   const ann = _annotations.find(a => a.filename === filename);
-  if (ann) {
+  if (ann && ann.status !== 'skipped' && ann.skipped !== true) {
     showAnnStatus('existing', `Existing annotation loaded for ${filename}. Editing will overwrite the saved entry.`);
     document.getElementById('ann-vendor').value = ann.vendor || '';
     document.getElementById('ann-date').value = ann.date || '';
@@ -1371,16 +1378,23 @@ function loadAnnotation() {
     return;
   }
 
+  if (ann && (ann.status === 'skipped' || ann.skipped === true)) {
+    showAnnStatus('existing', `Receipt was marked as skipped. Fill the fields and save to overwrite.`);
+  } else {
+    showAnnStatus('new', `New annotation. No E1 extraction cached — fill the fields manually from the receipt preview.`);
+  }
+
   const e1 = getE1CachedExtraction(filename);
   if (e1) {
-    showAnnStatus('new', `New annotation. Fields pre-populated from cached E1 extraction — review and correct as needed.`);
+    if (!ann || (ann.status !== 'skipped' && ann.skipped !== true)) {
+      showAnnStatus('new', `New annotation. Fields pre-populated from cached E1 extraction — review and correct as needed.`);
+    }
     document.getElementById('ann-vendor').value = e1.vendor || '';
     document.getElementById('ann-date').value = e1.date || '';
     document.getElementById('ann-amount').value = (e1.amount != null && e1.amount !== '') ? e1.amount : '';
     document.getElementById('ann-currency').value = e1.currency || '';
     document.getElementById('ann-category').value = e1.category || 'other';
   } else {
-    showAnnStatus('new', `New annotation. No E1 extraction cached — fill the fields manually from the receipt preview.`);
     document.getElementById('ann-vendor').value = '';
     document.getElementById('ann-date').value = '';
     document.getElementById('ann-amount').value = '';
@@ -1390,7 +1404,7 @@ function loadAnnotation() {
   document.getElementById('ann-verdict').value = 'justified';
   document.getElementById('ann-reason').value = '';
   document.getElementById('ann-ambiguous').checked = false;
-  document.getElementById('ann-notes').value = '';
+  document.getElementById('ann-notes').value = (ann && ann.notes) || '';
 }
 
 async function saveAnnotation() {
@@ -2409,8 +2423,8 @@ const RD_CONTENT_ST = `
     <p class="text-gray-700 text-sm leading-relaxed">Exports retained E1–E6 run data and supporting research metadata as JSON. Authentication secrets are excluded.</p>
   </div>
   <div>
-    <h4 class="font-semibold text-sm mb-1">Delete Experiment Results</h4>
-    <p class="text-gray-700 text-sm leading-relaxed">Permanently deletes saved E1–E6 outputs only after explicit confirmation. It does not delete policies, ground-truth annotations, settings or API credentials.</p>
+    <h4 class="font-semibold text-sm mb-1">Delete All Data</h4>
+    <p class="text-gray-700 text-sm leading-relaxed">Permanently deletes saved E1–E6 outputs and ground-truth annotations only after explicit confirmation. It does not delete policies, settings or API credentials.</p>
   </div>
 `
 

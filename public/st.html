@@ -94,17 +94,7 @@
           <div class="card-section-subtitle">Model and Input Configuration — define the models, connection and input handling used in experiments.</div>
 
           <div style="display: flex; flex-direction: column; gap: 16px;">
-            <div>
-              <label class="field-label" for="s-apikey">OpenRouter API Key</label>
-              <div class="apikey-field">
-                <input type="password" id="s-apikey" class="field-input-text" placeholder="sk-..." autocomplete="off" spellcheck="false" />
-                <button type="button" class="apikey-toggle" id="apikey-toggle" aria-label="Show or hide API key" title="Show / hide API key">
-                  <svg id="apikey-toggle-icon-eye-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                  <svg id="apikey-toggle-icon-eye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display: none;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                </button>
-              </div>
-              <div class="helper-text helper-text--muted" id="apikey-helper" style="text-align: left; margin-left: 0; max-width: none;">Stored in browser localStorage. Re-enter only if switching browsers or clearing data.</div>
-            </div>
+
 
             <div>
               <label class="field-label" for="s-vision-model">Vision Model (OCR — Layer 1)</label>
@@ -209,18 +199,18 @@
                   <div class="sub-card__icon sub-card__icon--red" aria-hidden="true">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6 17.6 20.1A2 2 0 0 1 15.6 22H8.4a2 2 0 0 1-2-1.9L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                   </div>
-                  <div class="sub-card__title">Delete Experiment Results</div>
+                  <div class="sub-card__title">Delete All Data</div>
                 </div>
-                <p class="sub-card__desc">Permanently delete all saved experiment outputs for E1–E6.</p>
+                <p class="sub-card__desc">Permanently delete all saved experiment outputs for E1–E6 and ground-truth annotations.</p>
 
                 <div class="delete-box delete-box--red">
                   <div class="delete-box__label">This will delete:</div>
                   <ul class="include-list" id="delete-will">
                     <li class="include-list__item"><span class="include-list__cross" aria-hidden="true">✗</span><span>Experiment run history (E1–E6)</span></li>
-                    <li class="include-list__item"><span class="include-list__cross" aria-hidden="true">✗</span><span>Extracted results</span></li>
+                    <li class="include-list__item"><span class="include-list__cross" aria-hidden="true">✗</span><span>Extracted results and cached extractions</span></li>
                     <li class="include-list__item"><span class="include-list__cross" aria-hidden="true">✗</span><span>Model outputs and raw responses</span></li>
                     <li class="include-list__item"><span class="include-list__cross" aria-hidden="true">✗</span><span>Verdicts, reasons and confidence</span></li>
-                    <li class="include-list__item"><span class="include-list__cross" aria-hidden="true">✗</span><span>Run metadata and annotations</span></li>
+                    <li class="include-list__item"><span class="include-list__cross" aria-hidden="true">✗</span><span>Ground-truth annotations (ground_truth.json)</span></li>
                   </ul>
                 </div>
 
@@ -228,17 +218,20 @@
                   <div class="delete-box__label">This will NOT delete:</div>
                   <ul class="include-list" id="delete-will-not">
                     <li class="include-list__item"><span class="include-list__check" aria-hidden="true">✓</span><span>Policies and policy versions</span></li>
-                    <li class="include-list__item"><span class="include-list__check" aria-hidden="true">✓</span><span>Ground-truth annotations</span></li>
                     <li class="include-list__item"><span class="include-list__check" aria-hidden="true">✓</span><span>API credentials</span></li>
                     <li class="include-list__item"><span class="include-list__check" aria-hidden="true">✓</span><span>Configuration settings</span></li>
                     <li class="include-list__item"><span class="include-list__check" aria-hidden="true">✓</span><span>System and application data</span></li>
                   </ul>
                 </div>
               </div>
-              <div class="sub-card__footer">
-                <button type="button" class="btn-delete-outline" id="s-delete-btn">
+              <div class="sub-card__footer" style="display: flex; flex-direction: column; gap: 8px;">
+                <button type="button" class="btn-delete-outline" id="s-delete-btn" style="width: 100%;">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6 17.6 20.1A2 2 0 0 1 15.6 22H8.4a2 2 0 0 1-2-1.9L5 6"/></svg>
-                  Delete All Results
+                  Delete All Data
+                </button>
+                <button type="button" class="btn-outline" id="s-restore-btn" style="width: 100%; border-color: var(--indigo); color: var(--indigo); height: 36px; padding: 0 16px; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                  Restore Default Receipts
                 </button>
               </div>
             </div>
@@ -365,22 +358,7 @@
 
     <script>
     (function() {
-      // ─── 1. API key show/hide eye toggle ───────────────────────────
-      function setupApiKeyToggle() {
-        const input = document.getElementById('s-apikey')
-        const btn = document.getElementById('apikey-toggle')
-        const eyeIcon = document.getElementById('apikey-toggle-icon-eye')
-        const eyeOffIcon = document.getElementById('apikey-toggle-icon-eye-off')
-        if (!input || !btn) return
 
-        btn.addEventListener('click', () => {
-          const isHidden = input.type === 'password'
-          input.type = isHidden ? 'text' : 'password'
-          if (eyeIcon) eyeIcon.style.display = isHidden ? 'inline-block' : 'none'
-          if (eyeOffIcon) eyeOffIcon.style.display = isHidden ? 'none' : 'inline-block'
-          btn.setAttribute('aria-label', isHidden ? 'Hide API key' : 'Show API key')
-        })
-      }
 
       // ─── 2. Page Guide sidebar toggle (button + X close) ──────────
       function setupPageGuide() {
@@ -466,19 +444,62 @@
         }
         if (del && !del.dataset.wired) {
           del.dataset.wired = '1'
-          del.addEventListener('click', () => {
+          del.addEventListener('click', async () => {
             const display = document.getElementById('confirm-count-display')
             const count = display ? display.textContent : '?'
-            const ok = window.confirm(`Delete ALL ${count} saved experiment run(s)?\n\nThis action cannot be undone. Policies, annotations, and configuration will be preserved.`)
+            const ok = window.confirm(`Delete ALL ${count} saved experiment run(s) and ground-truth annotations?\n\nThis action cannot be undone. Policies and configuration settings will be preserved.`)
             if (!ok) return
+            
+            // 1. Clear experiment results
             if (typeof ResultsStore !== 'undefined' && ResultsStore.clearAllResults) {
               ResultsStore.clearAllResults()
             } else if (window.APP && typeof window.APP.clearAllResults === 'function') {
               window.APP.clearAllResults()
             }
+
+            // 2. Clear ground-truth annotations on the server
+            try {
+              await fetch('/api/annotations/clear', { method: 'POST' });
+              if (typeof _annotations !== 'undefined') {
+                _annotations = [];
+              }
+            } catch (err) {
+              console.error('Failed to clear annotations:', err);
+            }
+
+            // 3. Clear all cached extractions and experiment data from sessionStorage
+            try {
+              for (let i = sessionStorage.length - 1; i >= 0; i--) {
+                const key = sessionStorage.key(i);
+                if (key && key.startsWith('psa_')) {
+                  sessionStorage.removeItem(key);
+                }
+              }
+            } catch (err) {
+              console.error('Failed to clear sessionStorage:', err);
+            }
+
             updateConfirmCount()
             const feedback = document.getElementById('settings-result')
-            if (feedback) feedback.innerHTML = '<span class="text-red-600">✓ All experiment results deleted.</span>'
+            if (feedback) feedback.innerHTML = '<span class="text-red-600">✓ All experiment results and ground-truth annotations deleted.</span>'
+          })
+        }
+        const restore = document.getElementById('s-restore-btn')
+        if (restore && !restore.dataset.wired) {
+          restore.dataset.wired = '1'
+          restore.addEventListener('click', async () => {
+            const feedback = document.getElementById('settings-result')
+            if (feedback) feedback.innerHTML = '<span class="text-gray-500">Restoring…</span>'
+            try {
+              const res = await fetch('/api/receipts/restore', { method: 'POST' })
+              const data = await res.json()
+              if (!data.ok) throw new Error(data.error || 'Restore failed')
+              
+              if (feedback) feedback.innerHTML = '<span class="text-green-600">✓ Default receipts restored successfully.</span>'
+            } catch (err) {
+              const feedback = document.getElementById('settings-result')
+              if (feedback) feedback.innerHTML = `<span class="text-red-600">Failed to restore receipts: ${err.message}</span>`
+            }
           })
         }
       }
@@ -509,7 +530,6 @@
 
       // ─── 7. Boot ──────────────────────────────────────────────────
       function boot() {
-        setupApiKeyToggle()
         setupPageGuide()
         setupStickySidebar()
         wireActionButtons()
@@ -535,11 +555,25 @@
   </div>
 </main>
   <footer class="app-footer">
-    <div class="app-footer__inner" style="justify-content: space-between; align-items: center;">
-      <div class="footer-brand">
-        <img src="/tflogo.png" alt="TOTAL FLOW" class="footer-logo">
+    <div class="app-footer__inner">
+      <div class="app-footer__top">
+        <div class="footer-brand">
+          <img src="/tflogo.png" alt="TOTAL FLOW" class="footer-logo">
+        </div>
+        <div class="footer-vertical-divider"></div>
+        <div class="footer-middle">
+          <div class="footer-middle__title">TOTALFLOW Compliance Intelligence Engine</div>
+          <div class="footer-middle__subtitle">Semantic Reasoning Research Platform</div>
+          <div class="footer-middle__accent">Research Programme &bull; R&amp;D 2025</div>
+        </div>
+        <div class="footer-right">
+          <div class="footer-right__copy">&copy; 2025&ndash;26 3030 Technologies</div>
+          <div class="footer-right__rights">All Rights Reserved.</div>
+        </div>
       </div>
-      <p class="caption" style="text-align: right; max-width: 50ch;">The TOTALFLOW Compliance Intelligence Engine and associated software are proprietary to <a href="https://3030technologies.com" style="color: var(--indigo); text-decoration: none;">3030 Technologies</a>. © 2025–26.</p>
+      <div class="app-footer__bottom">
+        <p class="footer-disclaimer">The TOTALFLOW Compliance Intelligence Engine, associated software, research methodologies, documentation and underlying intellectual property are proprietary to 3030 Technologies.</p>
+      </div>
     </div>
   </footer>
 
